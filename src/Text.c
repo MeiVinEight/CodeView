@@ -168,7 +168,7 @@ void Text_keyboard(Text *this, void *window, QWORD wp, QWORD lp)
 		if (this->length < 32)
 		{
 			if (wp <= '9') wp -= '0';
-			else wp -= ('a' - 10);
+			else wp -= ('A' - 10);
 			WORD idx = this->inputPos;
 			for (WORD i = this->length; i > idx; i--)
 			{
