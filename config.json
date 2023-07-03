@@ -1,0 +1,22 @@
+{
+	"name": "CodeView",
+	"source": "src",
+	"include": "include",
+	"exe": ".release\\CodeView",
+	"obj": ".release\\",
+	"resource": "res",
+	"options":
+	[
+		"/Od",
+		"/Zi",
+		"/GS-",
+		"/link",
+		"/NOD",
+		"/SUBSYSTEM:CONSOLE",
+		"/INCREMENTAL:NO",
+		"kernel32.lib",
+		"user32.lib",
+		"gdi32.lib",
+		"Memory.lib"
+	]
+}
