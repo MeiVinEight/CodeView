@@ -19,26 +19,6 @@ void Code__0(Code *this)
 	{
 		CodeType__0(this->children + i);
 	}
-
-	this->inst.disp = 0x7FFFFF05;
-	this->inst.imm = 0x7FFFFFF5;
-	this->inst.label = 0;
-	this->inst.op[0] = 0x81;
-	this->inst.op_len = 1;
-	this->inst.modrm.value = 0x04;
-	this->inst.rex.value = 0;
-	this->inst.sib.value = 0x25;
-	this->inst.vex[0] = 0;
-	this->inst.vex[1] = 0;
-	this->inst.vex[2] = 0;
-	this->inst.length = 11;
-	this->inst.disp_len = 4;
-	this->inst.imm_len = 4;
-	this->inst.set_prefix = 0;
-	this->inst.set_field = MODRM | SIB | DISP | IMM;
-	this->inst.jcc_type = 0;
-	this->inst.vex_cnt = 0;
-	this->inst.prefix_cnt = 0;
 }
 void Code__1(Code *this)
 {
