@@ -7,4 +7,4 @@ add_definitions(
 )
 include_directories(include)
 aux_source_directory(src SRC)
-add_executable(CodeView ${SRC})
+add_executable(CodeView ${SRC} res/CodeView.rc)
