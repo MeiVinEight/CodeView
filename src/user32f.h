@@ -12,6 +12,7 @@ long long __stdcall DispatchMessageA(const void *);
 int       __stdcall DrawTextExA(void *, char *, int, void *, unsigned int, void *);
 int       __stdcall EndPaint(void *, const void *);
 int       __stdcall FillRect(void *, void *, void *);
+int       __stdcall FrameRect(void *, const RECT *, void *);
 int       __stdcall GetClientRect(void *, void *);
 void     *__stdcall GetDC(void *);
 int       __stdcall GetMessageA(void *, void *, unsigned int, unsigned int);

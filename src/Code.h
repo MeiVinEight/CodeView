@@ -12,12 +12,15 @@ typedef struct Code
 	struct instruction inst;
 	WORD count;
 	CodeType children[7];
+	CodeType *mouse;
+	Component *unit;
 	DWORD space;
 } Code;
 
-void Code__0(Code *);
+void Code__0(Code *, Component *);
 void Code__1(Code *);
 void Code_paint(Code *, void *, void *);
+void Code_move(Code *, void *, void *, SIZE *, long, long);
 SIZE Code_position(Code *, void *, SIZE *);
 void Code_click(Code *, void *);
 SIZE Code_size(Code *, void *);

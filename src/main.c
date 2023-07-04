@@ -8,6 +8,7 @@
 #include "gdi32f.h"
 #include "Text.h"
 #include "CodeViewWindow.h"
+#include "CodeUnit.h"
 
 extern unsigned short __ImageBase;
 
@@ -190,7 +191,7 @@ int WinMain(void *ists, void *prv, char *cmd, int show)
 
 	unsigned long exsty = 0;
 	unsigned long style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
-	void *hwnd = CreateWindowExA(exsty, className, 0, style, 0x80000000, 0x80000000, 960, 540, 0, 0, ists, 0);
+	void *hwnd = CreateWindowExA(exsty, className, 0, style, 0x80000000, 0x80000000, 974, 547, 0, 0, ists, 0);
 	if (!hwnd)
 	{
 		return 0;
@@ -199,20 +200,24 @@ int WinMain(void *ists, void *prv, char *cmd, int show)
 	cvw->x = 0;
 	cvw->y = 0;
 	cvw->focus = 0;
+	cvw->hover = 0;
 	SetWindowLongPtrA(hwnd, 0, (QWORD) cvw);
 
 	// void *text = CreateWindowExA(0, "EDIT", 0, ES_UPPERCASE, 30, 30, 0xE0, 0x1E, hwnd, 0, ists, 0);
 	// DWORD err = GetLastError();
 	ShowWindow(hwnd, show);
 
-	Component *cmp;
-	cmp = (Component *) malloc(sizeof(Code));
-	Code__0((Code *) cmp);
-	AddComponent(cmp);
-	Code *view = (Code *) cmp;
-	cmp = (Component *) malloc(sizeof(Text));
-	Text__0((Text *) cmp, view);
-	AddComponent(cmp);
+	Code *code = (Code *) malloc(sizeof(Code));
+	CodeUnit *unit = (CodeUnit *) malloc(sizeof(CodeUnit));
+	Text *text = (Text *) malloc(sizeof(Text));
+
+	Code__0(code, (Component *) unit);
+	CodeUnit__0(unit, code);
+	Text__0(text, code);
+
+	AddComponent((Component *) text);
+	AddComponent((Component *) unit);
+	AddComponent((Component *) code);
 
 	MSG msg = {0};
 	while (GetMessageA(&msg, 0, 0, 0) > 0)

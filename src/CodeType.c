@@ -8,6 +8,7 @@ void CodeType__0(CodeType *this)
 	this->super.paint = (void (*)(Component *, void *, void *)) CodeType_paint;
 	// this->super.click = (void (*)(Component *, void *, void *)) CodeType_click;
 	this->super.size = (SIZE (*)(Component *, void *)) CodeType_size;
+	this->unit = 0;
 }
 void CodeType_paint(CodeType *this, void *window, void *hdc)
 {

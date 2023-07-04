@@ -236,6 +236,7 @@ static inline void mca_vex_decode(struct instruction *instr, enum supported_arch
 #endif
 
 		BYTE index = (BYTE) (instr->vex[1] & 0x3);
+		instr->type = index;
 		mca_decode_modrm(instr, arch, data, modrm_table[index], imm_table[index], 0);
 	}
 	// TODO  XOP, 0x8F
@@ -403,6 +404,7 @@ static int mca_decode_2b(struct instruction *instr, enum supported_architecture 
 
 	if (curr == 0x3A || curr == 0x38)
 	{
+		instr->type = (curr == 0x38) ? OP3B_38 : OP3B_3A;
 		instr->set_prefix |= OP3B;
 
 		// instr->prefixes[instr->prefix_cnt++] = curr;
@@ -491,6 +493,7 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
 		else if (curr == 0x0F)
 		{
 			instr->op[instr->op_len++] = curr;
+			instr->type = OP2B;
 			mca_decode_2b(instr, arch, start_data);
 #ifdef _ENABLE_RAW_BYTES
 			memcpy(instr->instr, start_data, instr->length);

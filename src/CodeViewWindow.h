@@ -8,6 +8,7 @@ typedef struct CodeViewWindow
 	long x;
 	long y;
 	Component *focus;
+	Component *hover;
 } CodeViewWindow;
 
 int range(long, long, long, long, long, long);

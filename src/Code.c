@@ -1,14 +1,15 @@
 #include "Code.h"
 #include "gdi32f.h"
+#include "CodeViewWindow.h"
+#include "user32f.h"
+#include "CodeUnit.h"
 
-void *__cdecl memcpy(void *, const void *, QWORD);
-#pragma intrinsic(memcpy)
-
-void Code__0(Code *this)
+void Code__0(Code *this, Component *unit)
 {
 	Component__0(&this->super);
 	this->super._1 = (void (*)(Component *)) Code__1;
 	this->super.paint = (void (*)(Component *, void *, void *)) Code_paint;
+	((Component *) this)->move = (void (*)(Component *, void *, void *, SIZE *, long, long)) Code_move;
 	this->super.position = (SIZE (*)(Component *, void *, SIZE *)) Code_position;
 	// this->super.click = (void (*)(Component *, void *)) Code_click;
 	this->super.size = (SIZE (*)(Component *, void *)) Code_size;
@@ -19,6 +20,16 @@ void Code__0(Code *this)
 	{
 		CodeType__0(this->children + i);
 	}
+	this->mouse = 0;
+	this->unit = unit;
+	char space = ' ';
+	SIZE spaceSize = {0, 0};
+	void *context = CreateCompatibleDC(0);
+	void *font = SelectObject(context, this->font);
+	GetTextExtentPoint32A(context, &space, 1, &spaceSize);
+	this->space = spaceSize.cx;
+	SelectObject(context, font);
+	DeleteObject(context);
 }
 void Code__1(Code *this)
 {
@@ -48,6 +59,39 @@ void Code_paint(Code *this, void *window, void *hdc)
 	SelectObject(context, font);
 	DeleteDC(context);
 }
+void Code_move(Code *this, void *window, void *context, SIZE *client, long x, long y)
+{
+	CodeType *prev = this->mouse;
+	this->mouse = 0;
+	void *font = SelectObject(context, this->font);
+
+	SIZE size = ((Component *) this)->size((Component *) this, context);
+	SIZE pos = ((Component *) this)->position((Component *) this, context, client);
+
+	if (range(pos.cx, pos.cy, pos.cx + size.cx, pos.cy + size.cy, x, y))
+	{
+		for (WORD i = 0; i < this->count; i++)
+		{
+			size = ((Component *) &this->children[i])->size((Component *) &this->children[i], context);
+			if (range(pos.cx, pos.cy, pos.cx + size.cx, pos.cy + size.cy, x, y))
+			{
+				this->mouse = &this->children[i];
+				break;
+			}
+			pos.cx += (long) this->space;
+			pos.cx += size.cx;
+		}
+	}
+
+	if (prev != this->mouse)
+	{
+		((Component *) this->unit)->repaint = 1;
+		InvalidateRect(window, 0, 0);
+	}
+
+	Component_move((Component *) this, window, context, client, x, y);
+	SelectObject(context, font);
+}
 SIZE Code_position(Code *this, void *context, SIZE *rect)
 {
 	SIZE pos = {0, 0};
@@ -64,11 +108,6 @@ SIZE Code_size(Code *this, void *context)
 	Code_update(this);
 	void *font = SelectObject(context, this->font);
 	SIZE size = {0, 0};
-
-	char space = ' ';
-	GetTextExtentPoint32A(context, &space, 1, &size);
-	this->space = size.cx;
-	size.cx = 0;
 
 	for (WORD i = 0; i < this->count; i++)
 	{
@@ -91,6 +130,7 @@ void Code_update(Code *this)
 		memcpy(this->children[this->count].code, this->inst.prefixes, this->inst.prefix_cnt);
 		this->children[this->count].length = this->inst.prefix_cnt;
 		this->children[this->count].color = 0xFFFF55;
+		this->children[this->count].unit = 0;
 		this->count++;
 	}
 
@@ -99,6 +139,7 @@ void Code_update(Code *this)
 		this->children[this->count].code[0] = this->inst.rex.value;
 		this->children[this->count].length = 1;
 		this->children[this->count].color = 0xFF5555;
+		this->children[this->count].unit = CodeUnit_REX;
 		this->count++;
 	}
 
@@ -107,12 +148,14 @@ void Code_update(Code *this)
 		memcpy(this->children[this->count].code, this->inst.vex, this->inst.vex_cnt);
 		this->children[this->count].length = this->inst.vex_cnt;
 		this->children[this->count].color = 0xFFFF55;
+		this->children[this->count].unit = 0;
 		this->count++;
 	}
 
 	memcpy(this->children[this->count].code, this->inst.op, this->inst.op_len);
 	this->children[this->count].length = this->inst.op_len;
 	this->children[this->count].color = 0x55FF55;
+	this->children[this->count].unit = 0;
 	this->count++;
 
 	if (this->inst.set_field & MODRM)
@@ -120,6 +163,7 @@ void Code_update(Code *this)
 		this->children[this->count].code[0] = this->inst.modrm.value;
 		this->children[this->count].length = 1;
 		this->children[this->count].color = 0x00AAFF;
+		this->children[this->count].unit = CodeUnit_MODRM;
 		this->count++;
 	}
 
@@ -128,6 +172,7 @@ void Code_update(Code *this)
 		this->children[this->count].code[0] = this->inst.sib.value;
 		this->children[this->count].length = 1;
 		this->children[this->count].color = 0x55FFFF;
+		this->children[this->count].unit = 0;
 		this->count++;
 	}
 
@@ -136,6 +181,7 @@ void Code_update(Code *this)
 		memcpy(this->children[this->count].code, &this->inst.disp, this->inst.disp_len);
 		this->children[this->count].length = this->inst.disp_len;
 		this->children[this->count].color = 0xFF55FF;
+		this->children[this->count].unit = 0;
 		this->count++;
 	}
 
@@ -144,6 +190,7 @@ void Code_update(Code *this)
 		memcpy(this->children[this->count].code, &this->inst.imm, this->inst.imm_len);
 		this->children[this->count].length = this->inst.imm_len;
 		this->children[this->count].color = 0x5555FF;
+		this->children[this->count].unit = 0;
 		this->count++;
 	}
 }
