@@ -11,7 +11,7 @@ typedef struct Code
 	void *font;
 	struct instruction inst;
 	WORD count;
-	CodeType children[7];
+	CodeType children[8];
 	CodeType *mouse;
 	Component *unit;
 	DWORD space;

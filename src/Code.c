@@ -187,10 +187,26 @@ void Code_update(Code *this)
 
 	if (this->inst.set_field & IMM)
 	{
-		memcpy(this->children[this->count].code, &this->inst.imm, this->inst.imm_len);
-		this->children[this->count].length = this->inst.imm_len;
-		this->children[this->count].color = 0x5555FF;
-		this->children[this->count].unit = 0;
-		this->count++;
+		if (this->inst.op[0] == 0xC8) // ENTER Iw, Ib
+		{
+			memcpy(this->children[this->count].code, &this->inst.imm, 2);
+			this->children[this->count].length = 2;
+			this->children[this->count].color = 0x5555FF;
+			this->children[this->count].unit = 0;
+			this->count++;
+			memcpy(this->children[this->count].code, ((BYTE *) (&this->inst.imm)) + 2, 1);
+			this->children[this->count].length = 1;
+			this->children[this->count].color = 0x5555FF;
+			this->children[this->count].unit = 0;
+			this->count++;
+		}
+		else
+		{
+			memcpy(this->children[this->count].code, &this->inst.imm, this->inst.imm_len);
+			this->children[this->count].length = this->inst.imm_len;
+			this->children[this->count].color = 0x5555FF;
+			this->children[this->count].unit = 0;
+			this->count++;
+		}
 	}
 }
