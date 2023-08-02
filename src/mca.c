@@ -830,3 +830,53 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
 
 	return instr->length;
 }
+int find_legacy_prefix(struct instruction *inst, BYTE pfx)
+{
+	for (BYTE i = 0; i < inst->prefix_cnt; i++)
+	{
+		if (inst->prefixes[i] == pfx)
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
+const opcode *find_opcode_extension(struct instruction *inst)
+{
+	BYTE opc_idx = 0;
+	if (opcode_map[inst->op_len - 1][inst->op[inst->op_len - 1]] < 0x80)
+	{
+		BYTE opc_ext_grp = opcode_ext_grp_table[opcode_map[inst->op_len - 1][inst->op[inst->op_len - 1]]];
+		const BYTE *opc_ext_reg_tb = 0;
+		if (opc_ext_grp < 128)
+			opc_ext_reg_tb = opcode_ext_reg_table[opc_ext_grp];
+		else
+		{
+			const BYTE *opc_ext_mod_tb = opcode_ext_mod_table[opc_ext_grp - 128];
+			BYTE opc_ext_mod = opc_ext_mod_tb[inst->modrm.bits.mod == 3];
+			if (opc_ext_mod < 128)
+				opc_ext_reg_tb = opcode_ext_reg_table[opc_ext_mod];
+			else
+			{
+				const BYTE *opc_ext_pfx_tb = opcode_ext_pfx_table[opc_ext_mod - 128];
+				if (opc_ext_pfx_tb[1] != 255 && find_legacy_prefix(inst, 0x66))
+					opc_ext_reg_tb = opcode_ext_reg_table[opc_ext_pfx_tb[1]];
+				else if (opc_ext_pfx_tb[2] != 255 && find_legacy_prefix(inst, 0xF3))
+					opc_ext_reg_tb = opcode_ext_reg_table[opc_ext_pfx_tb[2]];
+				else if (opc_ext_pfx_tb[0] != 255)
+					opc_ext_reg_tb = opcode_ext_reg_table[opc_ext_pfx_tb[0]];
+			}
+		}
+		if (opc_ext_reg_tb)
+		{
+			BYTE opc_ext_reg = opc_ext_reg_tb[inst->modrm.bits.reg];
+			if (opc_ext_reg < 128)
+				opc_idx = opc_ext_reg;
+			else
+				opc_idx = opcode_ext_r_m_table[opc_ext_reg - 128][inst->modrm.bits.rm];
+		}
+	}
+	if (opc_idx)
+		return &opcode_ext_table[opc_idx];
+	return 0;
+}

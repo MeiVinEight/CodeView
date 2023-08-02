@@ -722,5 +722,7 @@ int mca_imm_size(struct instruction *instr, size_t val, enum supported_architect
 int mca_decode_2b(struct instruction *instr, enum supported_architecture arch, const char *data_src);
 int mca_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data);
 void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, BYTE vex_size);
+int find_legacy_prefix(struct instruction *, BYTE);
+const opcode *find_opcode_extension(struct instruction *);
 
 #endif //MCA_H
