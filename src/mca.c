@@ -206,8 +206,325 @@
 
 static size_t *imm_table[4] = {0, imm_byte_2b, imm_byte_3b_38, imm_byte_3b_3A};
 static size_t *modrm_table[4] = {0, modrm_2b, modreg_3b_38, modreg_3b_3A};
+const opcode opcode_ext_table[] = {
+	/*   0 */ {0},
+	/*   1 */ {3, "NOP"},
+	/*---- opcode extension ----*/
+	/*   2 */ {3, "ADD"},
+	/*   3 */ {2, "OR"},
+	/*   4 */ {3, "ADC"},
+	/*   5 */ {3, "SBB"},
+	/*   6 */ {3, "AND"},
+	/*   7 */ {3, "SUB"},
+	/*   8 */ {3, "XOR"},
+	/*   9 */ {3, "CMP"},
+	/*  10 */ {3, "POP"},
+	/*  11 */ {3, "ROL"},
+	/*  12 */ {3, "ROR"},
+	/*  13 */ {3, "RCL"},
+	/*  14 */ {3, "RCR"},
+	/*  15 */ {7, "SHL/SAL"},
+	/*  16 */ {3, "SHR"},
+	/*  17 */ {3, "SAR"},
+	/*  18 */ {4, "TEST"},
+	/*  19 */ {3, "NOT"},
+	/*  20 */ {3, "NEG"},
+	/*  21 */ {3, "MUL"}, // AL/RAX
+	/*  22 */ {4, "IMUL"}, // AL/RAX
+	/*  23 */ {3, "DIV"}, // AL/RAX
+	/*  24 */ {4, "IDIV"}, // AL/RAX
+	/*  25 */ {3, "INC"}, // Eb
+	/*  26 */ {3, "DEC"}, // Eb
+	/*  27 */ {3, "INC"}, // Ev
+	/*  28 */ {3, "DEC"}, // Ev
+	/*  29 */ {4, "CALL"}, // Ev
+	/*  30 */ {4, "CALL"}, // Ep
+	/*  31 */ {3, "JMP"}, // Ev
+	/*  32 */ {3, "JMP"}, // Mp
+	/*  33 */ {4, "PUSH"}, // Ev
+	/*  34 */ {3, "MOV"}, // Eb, Ib
+	/*  35 */ {6, "XABORT"}, // Ib
+	/*  36 */ {3, "MOV"}, // Ev, Iz
+	/*  37 */ {6, "XBEGIN"}, // Jz
+	/*  38 */ {4, "SLDT"}, // Rv/Mw
+	/*  39 */ {3, "STR"}, // Rv/Mw
+	/*  40 */ {4, "LLDT"}, // Ew
+	/*  41 */ {3, "LTR"}, // Ew
+	/*  42 */ {4, "VERR"}, // Ew
+	/*  43 */ {4, "VERW"}, // Ew
+	/*  44 */ {4, "SGDT"}, // Ms
+	/*  45 */ {4, "SIDT"}, // Ms
+	/*  46 */ {4, "LGDT"}, // Ms
+	/*  47 */ {4, "LIDT"}, // Ms
+	/*  48 */ {4, "SMSW"}, // Mw/Rv
+	/*  49 */ {4, "LMSW"}, // Ew
+	/*  50 */ {6, "INVLPG"}, // Mb
+	/*  51 */ {6, "VMCALL"},
+	/*  52 */ {8, "VMLAUNCH"},
+	/*  53 */ {8, "VMRESUME"},
+	/*  54 */ {6, "VMXOFF"},
+	/*  55 */ {7, "MONITOR"},
+	/*  56 */ {5, "MWAIT"},
+	/*  57 */ {4, "CLAC"},
+	/*  58 */ {4, "STAC"},
+	/*  59 */ {5, "ENCLS"},
+	/*  60 */ {6, "XGETBV"},
+	/*  61 */ {6, "XSETBV"},
+	/*  62 */ {6, "VMFUNC"},
+	/*  63 */ {4, "XEND"},
+	/*  64 */ {5, "XTEST"},
+	/*  65 */ {5, "ENCLU"},
+	/*  66 */ {6, "SWAPGS"},
+	/*  67 */ {6, "RDTSCP"},
+	/*  68 */ {2, "BT"},
+	/*  69 */ {3, "BTS"},
+	/*  70 */ {3, "BTR"},
+	/*  71 */ {3, "BTC"},
+	/*  72 */ {8, "CMPXCH8B"}, // Mq
+	/*  73 */ {10, "CMPXCHG16B"}, // Mdq
+	/*  74 */ {7, "VMPTRLD"}, // Mq
+	/*  75 */ {7, "VMPTRST"}, // Mq
+	/*  76 */ {7, "VMCLEAR"}, // Mq
+	/*  77 */ {5, "VMXON"}, // Mq
+	/*  78 */ {6, "RDRAND"}, // Rv
+	/*  79 */ {6, "RDSEED"}, // Rv
+	/*  80 */ {5, "RDPID"}, // Rd/q
+	/*  81 */ {5, "PSRLW"}, // Nq, Ib
+	/*  82 */ {5, "PSRAW"}, // Nq, Ib
+	/*  83 */ {5, "PSLLW"}, // Nq, Ib
+	/*  84 */ {6, "VPSRLW"}, // Hx, Ux, Ib
+	/*  85 */ {6, "VPSRAW"}, // Hx, Ux, Ib
+	/*  86 */ {6, "VPSLLW"}, // Hx, Ux, Ib
+	/*  87 */ {5, "PSRLD"}, // Nq, Ib
+	/*  88 */ {5, "PSRAD"}, // Nq, Ib
+	/*  89 */ {5, "PSLLD"}, // Nq, Ib
+	/*  90 */ {6, "VPSRLD"}, // Hx, Ux, Ib
+	/*  91 */ {6, "VPSRAD"}, // Hx, Ux, Ib
+	/*  92 */ {6, "VPSLLD"}, // Hx, Ux, Ib
+	/*  93 */ {5, "PSRLQ"}, // Nq, Ib
+	/*  94 */ {5, "PSLLQ"}, // Nq, Ib
+	/*  95 */ {6, "VPSRLQ"}, // Hx, Ux, Ib
+	/*  96 */ {7, "VPSRLDQ"}, // Hx, Ux, Ib
+	/*  97 */ {6, "VPSLLQ"}, // Hx, Ux, Ib
+	/*  98 */ {7, "VPSLLDQ"}, // Hx, Ux, Ib
+	/*  99 */ {6, "FXSAVE"},
+	/* 100 */ {7, "FXRSTOR"},
+	/* 101 */ {7, "LDMXCSR"},
+	/* 102 */ {7, "STMXCSR"},
+	/* 103 */ {5, "XSAVE"},
+	/* 104 */ {6, "XRSTOR"},
+	/* 105 */ {8, "XSAVEOPT"},
+	/* 106 */ {7, "CLFLUSH"},
+	/* 107 */ {6, "LFENCE"},
+	/* 108 */ {6, "MFENCE"},
+	/* 109 */ {6, "SFENCE"},
+	/* 110 */ {8, "RDFSBASE"}, // Ry
+	/* 111 */ {8, "RDGSBASE"}, // Ry
+	/* 112 */ {8, "WRFSBASE"}, // Ry
+	/* 113 */ {8, "WRGSBASE"}, // Ry
+	/* 114 */ {8, "PREFETCH"}, // NTA
+	/* 115 */ {8, "PREFETCH"}, // T0
+	/* 116 */ {8, "PREFETCH"}, // T1
+	/* 117 */ {8, "PREFETCH"}, // T2
+	/* 118 */ {4, "BLSR"}, // By, Ey
+	/* 119 */ {6, "BLSMSK"}, // By, Ey
+	/* 120 */ {4, "BLSI"}, // By, Ey
+	/*---- opcode extension ----*/
+};
+const opcode opcode_1_table[] = {
+	/* 80 */ {3, "ADD"},
+	/* 81 */ {2, "OR"},
+	/* 82 */ {4, "PUSH"},
+	/* 83 */ {3, "ADC"},
+	/* 84 */ {3, "SBB"},
+	/* 85 */ {3, "POP"},
+	/* 86 */ {3, "AND"},
+	/* 87 */ {3, "SUB"},
+	/* 88 */ {3, "XOR"},
+	/* 89 */ {3, "CMP"},
+	/* 8A */ {6, "MOVSXD"},
+	/* 8B */ {4, "IMUL"},
+	/* 8C */ {4, "INSB"},
+	/* 8D */ {4, "INSW"},
+	/* 8E */ {5, "OUTSB"},
+	/* 8F */ {5, "OUTSW"},
+	/* 90 */ {2, "JO"},
+	/* 91 */ {3, "JNO"},
+	/* 92 */ {2, "JB"},
+	/* 93 */ {3, "JNB"},
+	/* 94 */ {2, "JZ"},
+	/* 95 */ {3, "JNZ"},
+	/* 96 */ {3, "JBE"},
+	/* 97 */ {4, "JNBE"},
+	/* 98 */ {2, "JS"},
+	/* 99 */ {3, "JNS"},
+	/* 9A */ {3, "JPE"},
+	/* 9B */ {3, "JPO"},
+	/* 9C */ {2, "JL"},
+	/* 9D */ {3, "JNL"},
+	/* 9E */ {3, "JLE"},
+	/* 9F */ {4, "JNLE"},
+	/* A0 */ {4, "TEST"},
+	/* A1 */ {4, "XCHG"},
+	/* A2 */ {3, "MOV"},
+	/* A3 */ {3, "LEA"},
+	/* A4 */ {4, "CWDE"},
+	/* A5 */ {3, "CDQ"},
+	/* A6 */ {4, "WAIT"},
+	/* A7 */ {6, "PUSHFQ"},
+	/* A8 */ {5, "POPFQ"},
+	/* A9 */ {4, "SAHF"},
+	/* AA */ {4, "LAHF"},
+	/* AB */ {5, "MOVSB"},
+	/* AC */ {5, "MOVSD"},
+	/* AD */ {5, "CMPSB"},
+	/* AE */ {5, "CMPSD"},
+	/* AF */ {5, "STOSB"},
+	/* B0 */ {5, "STOSD"},
+	/* B1 */ {5, "LODSB"},
+	/* B2 */ {5, "LODSD"},
+	/* B3 */ {5, "SCASB"},
+	/* B4 */ {5, "SCASD"},
+	/* B5 */ {3, "RET"},
+	/* B6 */ {5, "ENTER"},
+	/* B7 */ {5, "LEAVE"},
+	/* B8 */ {4, "INT3"},
+	/* B9 */ {4, "INT"},
+	/* BA */ {5, "IRETD"},
+	/* BB */ {4, "SALC"}, // D6 ?
+	/* BC */ {5, "XLATB"},
+	/* BD */ {6, "LOOPNZ"},
+	/* BE */ {5, "LOOPZ"},
+	/* BF */ {4, "LOOP"},
+	/* C0 */ {5, "JRCXZ"},
+	/* C1 */ {2, "IN"},
+	/* C2 */ {3, "OUT"},
+	/* C3 */ {3, "JMP"},
+	/* C4 */ {4, "CALL"},
+	/* C5 */ {4, "INT1"},
+	/* C6 */ {3, "HLT"},
+	/* C7 */ {3, "CMC"},
+	/* C8 */ {3, "CLC"},
+	/* C9 */ {3, "STC"},
+	/* CA */ {3, "CLI"},
+	/* CB */ {3, "STI"},
+	/* CC */ {3, "CLD"},
+	/* CD */ {3, "STD"},
+};
+const BYTE opcode_ext_r_m_table[][8] = {
+//   0F 01 (11 000 XXX)
+//   000  001  010  011  100  101  110  111
+	{  0,  51,  52,  53,  54,   0,   0,   0},
 
-static inline void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, BYTE vex_size)
+//   0F 01 (11 001 XXX)
+//   000  001  010  011  100  101  110  111
+	{ 55,  56,  57,  58,   0,   0,   0,  59},
+
+//   0F 01 (11 010 XXX)
+//   000  001  010  011  100  101  110  111
+	{ 60,  61,   0,   0,  62,  63,  64,  65},
+
+//   0F 01 (11 111 XXX)
+//   000  001  010  011  100  101  110  111
+	{ 66,  67,   0,   0,   0,   0,   0,   0}
+};
+const BYTE opcode_ext_reg_table[][8] = {
+	/* ID     000  001  010  011  100  101  110  111      OPC GRP MOD PFX */
+	/*  0 */ {  2,   3,   4,   5,   6,   7,   8,   9}, //      1
+	/*  1 */ { 10,   0,   0,   0,   0,   0,   0,   0}, //      1A
+	/*  2 */ { 11,  12,  13,  14,  15,  16,   0,  17}, //      2
+	/*  3 */ { 18,   0,  19,  20,  21,  22,  23,  24}, //      3
+	/*  4 */ { 25,  26,   0,   0,   0,   0,   0,   0}, //      4
+	/*  5 */ { 27,  28,  29,  30,  31,  32,  33,   0}, //      5
+	/*  6 */ { 34,   0,   0,   0,   0,   0,   0,   0}, //  C6 11  MEM
+	/*  7 */ { 34,   0,   0,   0,   0,   0,   0,  35}, //  C6 11  11B
+	/*  8 */ { 36,   0,   0,   0,   0,   0,   0,   0}, //  C7 11  MEM
+	/*  9 */ { 36,   0,   0,   0,   0,   0,   0,  37}, //  C7 11  11B
+	/* 10 */ { 38,  39,  40,  41,  42,  43,   0,   0}, //      6
+	/* 11 */ { 44,  45,  46,  47,  48,   0,  49,  50}, //      7  MEM
+	/* 12 */ {128, 129, 130,   0,  48,   0,  49, 131}, //      7  11B
+	/* 13 */ {  0,   0,   0,   0,  68,  69,  70,  71}, //      8
+	/* 14 */ {  0,  72,   0,   0,   0,   0,  74,  75}, //      9  MEM
+	/* 15 */ {  0,   0,   0,   0,   0,   0,  76,   0}, //      9  MEM 66
+	/* 16 */ {  0,   0,   0,   0,   0,   0,  77,   0}, //      9  MEM F3
+	/* 17 */ {  0,   0,   0,   0,   0,   0,  78,  79}, //      9  11B
+	/* 18 */ {  0,   0,   0,   0,   0,   0,   0,  80}, //      9  11B F3
+	/* 19 */ {  0,   0,  81,   0,  82,   0,  83,   0}, //     12  11B
+	/* 20 */ {  0,   0,  84,   0,  85,   0,  86,   0}, //     12  11B 66
+	/* 21 */ {  0,   0,  87,   0,  88,   0,  89,   0}, //     13  11B
+	/* 22 */ {  0,   0,  90,   0,  91,   0,  92,   0}, //     13  11B 66
+	/* 23 */ {  0,   0,  93,   0,   0,   0,  94,   0}, //     14  11B
+	/* 24 */ {  0,   0,  95,  96,   0,   0,  97,  98}, //     14  11B 66
+	/* 25 */ { 99, 100, 101, 102, 103, 104, 105, 106}, //     15  MEM
+	/* 26 */ {  0,   0,   0,   0,   0, 107, 108, 109}, //     15  11B
+	/* 27 */ {110, 111, 112, 113,   0,   0,   0,   0}, //     15  11B F3
+	/* 28 */ {114, 115, 116, 117,   0,   0,   0,   0}, //     16  MEM
+	/* 29 */ {  0, 118, 119, 120,   0,   0,   0,   0}, //     17
+};
+const BYTE opcode_ext_pfx_table[][3] = {
+	/*ID      NO   66   F3          GRP MOD */
+	/* 0 */ { 14,  15,  16}, //      9  MEM
+	/* 1 */ { 17, 255,  18}, //      9  11B
+	/* 2 */ { 19,  20, 255}, //     12  11B
+	/* 3 */ { 21,  22, 255}, //     13  11B
+	/* 4 */ { 23,  24, 255}, //     14  11B
+	/* 5 */ { 26, 255,  27}, //     15  11B
+};
+const BYTE opcode_ext_mod_table[][2] = {
+	/* 0 */ {  6,   7}, //  C6 11
+	/* 1 */ {  8,   9}, //  C7 11
+	/* 2 */ { 11,  12}, //      7
+	/* 3 */ {128, 129}, //      9
+	/* 4 */ {255, 130}, //     12
+	/* 5 */ {255, 131}, //     13
+	/* 6 */ {255, 132}, //     14
+	/* 7 */ { 25, 133}, //     15
+	/* 8 */ { 28, 255}, //     16
+};
+const BYTE opcode_ext_grp_table[] = {
+	/*  0 */   0, //      1
+	/*  1 */   1, //      1A
+	/*  2 */   2, //      2
+	/*  3 */   3, //      3
+	/*  4 */   4, //      4
+	/*  5 */   5, //      5
+	/*  6 */  10, //      6
+	/*  7 */ 130, //      7
+	/*  8 */  13, //      8
+	/*  9 */ 131, //      9
+	/* 10 */ 255, //     10
+	/* 11 */ 128, //  C6 11
+	/* 12 */ 129, //  C7 11
+	/* 13 */ 132, //     12
+	/* 14 */ 133, //     13
+	/* 15 */ 134, //     14
+	/* 16 */ 135, //     15
+	/* 17 */ 136, //     16,
+	/* 18 */  29, //     17
+};
+const BYTE opcode_map[][256] = {
+	{
+		/*      0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F */
+		/*0*/ 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0xFF, 0xFF, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0xFF, 0xFF,
+		/*1*/ 0x83, 0x83, 0x83, 0x83, 0x83, 0x83, 0xFF, 0xFF, 0x84, 0x84, 0x84, 0x84, 0x84, 0x84, 0xFF, 0xFF,
+		/*2*/ 0x86, 0x86, 0x86, 0x86, 0x86, 0x86, 0xFF, 0xFF, 0x87, 0x87, 0x87, 0x87, 0x87, 0x87, 0xFF, 0xFF,
+		/*3*/ 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0xFF, 0xFF, 0x89, 0x89, 0x89, 0x89, 0x89, 0x89, 0xFF, 0xFF,
+		/*4*/ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, /* REX */
+		/*5*/ 0x82, 0x82, 0x82, 0x82, 0x82, 0x82, 0x82, 0x82, 0x85, 0x85, 0x85, 0x85, 0x85, 0x85, 0x85, 0x85,
+		/*6*/ 0xFF, 0xFF, 0xFF, 0x8A, 0xFF, 0xFF, 0xFF, 0xFF, 0x82, 0x8B, 0x82, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F,
+		/*7*/ 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F,
+		/*8*/ 0x00, 0x00, 0x00, 0x00, 0xA0, 0xA0, 0xA1, 0xA1, 0xA2, 0xA2, 0xA2, 0xA2, 0xA2, 0xA3, 0xA2, 0x01,
+		/*9*/ 0xFE, 0xA1, 0xA1, 0xA1, 0xA1, 0xA1, 0xA1, 0xA1, 0xA4, 0xA5, 0xFF, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA,
+		/*A*/ 0xA2, 0xA2, 0xA2, 0xA2, 0xAB, 0xAC, 0xAD, 0xAE, 0xA0, 0xA0, 0xAF, 0xB0, 0xB1, 0xB2, 0xB3, 0xB4,
+		/*B*/ 0xA2, 0xA2, 0xA2, 0xA2, 0xA2, 0xA2, 0xA2, 0xA2, 0xA2, 0xA2, 0xA2, 0xA2, 0xA2, 0xA2, 0xA2, 0xA2,
+		/*C*/ 0x02, 0x02, 0xB5, 0xB5, 0xFF, 0xFF, 0x0B, 0x0C, 0xB6, 0xB7, 0xB5, 0xB5, 0xB8, 0xB9, 0xFF, 0xBA,
+		/*D*/ 0x02, 0x02, 0x02, 0x02, 0xFF, 0xFF, 0xFF, 0xBC, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, /* D8 - DF: X87 FPU */
+		/*E*/ 0xBD, 0xBE, 0xBF, 0xC0, 0xC1, 0xC1, 0xC2, 0xC2, 0xC4, 0xC3, 0xC3, 0xC3, 0xC1, 0xC1, 0xC2, 0xC2,
+		/*F*/ 0xFF, 0xC5, 0xFF, 0xFF, 0xC6, 0xC7, 0x03, 0x03, 0xC8, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0x04, 0x05
+	}
+};
+
+void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, BYTE vex_size)
 {
 	memcpy(instr->vex, (data + instr->length), vex_size);
 	instr->vex_cnt += vex_size;
@@ -242,8 +559,7 @@ static inline void mca_vex_decode(struct instruction *instr, enum supported_arch
 	// TODO  XOP, 0x8F
 
 }
-
-static inline int mca_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data)
+int mca_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data)
 {
 	BYTE curr_byte = (BYTE) *(data + instr->length);
 	BYTE next_byte = (BYTE) *(data + instr->length + 1);
@@ -257,13 +573,11 @@ static inline int mca_vex_size(struct instruction *instr, enum supported_archite
 
 	return 0;
 }
-
 int mca_check_sib(BYTE mod, BYTE rm)
 {
 	return mod < 3 && rm == 4;
 }
-
-static inline int mca_displacement_size(BYTE mod, BYTE rm)
+int mca_displacement_size(BYTE mod, BYTE rm)
 {
 	if ((mod == 0x02) || (rm == 0x05 && !mod))
 		return 4;
@@ -271,8 +585,7 @@ static inline int mca_displacement_size(BYTE mod, BYTE rm)
 		return 1;
 	return 0;
 }
-
-static inline int mca_imm_size(struct instruction *instr, size_t val, enum supported_architecture arch)
+int mca_imm_size(struct instruction *instr, size_t val, enum supported_architecture arch)
 {
 	switch (val)
 	{
@@ -318,8 +631,7 @@ static inline int mca_imm_size(struct instruction *instr, size_t val, enum suppo
 			return 0;
 	}
 }
-
-static void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *start_data, const size_t *modrmTable, const size_t *immTable, const size_t *jcc_table)
+void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *start_data, const size_t *modrmTable, const size_t *immTable, const size_t *jcc_table)
 {
 	size_t val;
 	if ((val = modrmTable[instr->op[instr->op_len - 1]]))
@@ -396,8 +708,7 @@ static void mca_decode_modrm(struct instruction *instr, enum supported_architect
 			instr->label = (QWORD) start_data + ((QWORD) instr->imm) + instr->length;
 	}
 }
-
-static int mca_decode_2b(struct instruction *instr, enum supported_architecture arch, const char *data_src)
+int mca_decode_2b(struct instruction *instr, enum supported_architecture arch, const char *data_src)
 {
 	instr->set_prefix |= ESCAPE;
 	BYTE curr = (BYTE) *(data_src + instr->length);
@@ -428,7 +739,6 @@ static int mca_decode_2b(struct instruction *instr, enum supported_architecture 
 
 	return instr->length;
 }
-
 int mca_decode(struct instruction *instr, enum supported_architecture arch, char *data, int offset)
 {
 	memset(instr, 0, sizeof(struct instruction));
