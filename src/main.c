@@ -190,7 +190,7 @@ int WinMain(void *ists, void *prv, char *cmd, int show)
 
 	unsigned long exsty = 0;
 	unsigned long style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
-	void *hwnd = CreateWindowExA(exsty, className, 0, style, 0x80000000, 0x80000000, 974, 547, 0, 0, ists, 0);
+	void *hwnd = CreateWindowExA(exsty, className, className, style, 0x80000000, 0x80000000, 974, 547, 0, 0, ists, 0);
 	if (!hwnd)
 	{
 		return 0;
