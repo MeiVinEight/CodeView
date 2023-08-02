@@ -141,7 +141,7 @@ void CodeUnit_REX(CodeUnit *this, void *window, void *context)
 	TextOutA(context, textPos.cx, textPos.cy, (char *) REXX, 39);
 
 	textPos.cy += textHeight;
-	BYTE REXB[] = "X = 0: Extension of the MODR/M R/M field, SIB BASE field, or Opcode REG field";
+	BYTE REXB[] = "B = 0: Extension of the MODR/M R/M field, SIB BASE field, or Opcode REG field";
 	REXB[4] += this->code->inst.rex.bits.rex_b;
 	TextOutA(context, textPos.cx, textPos.cy, (char *) REXB, 77);
 
