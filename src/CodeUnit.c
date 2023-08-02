@@ -270,6 +270,16 @@ void CodeUnit_MODRM(CodeUnit *this, void *window, void *context)
 		SIZE prefixSize = {0, 0};
 		GetTextExtentPoint32A(context, buf, 11, &prefixSize);
 		TextOutA(context, pos.cx, pos.cy, buf, 11);
+		const opcode *opc = find_opcode_extension(inst);
+		if (opc)
+		{
+			char opext_desc[] = "Opcode extension ";
+			SIZE extSize = {0, 0};
+			GetTextExtentPoint32A(context, opext_desc, 17, &extSize);
+			TextOutA(context, pos.cx + prefixSize.cx, pos.cy, opext_desc, 17);
+			TextOutA(context, pos.cx + prefixSize.cx + extSize.cx, pos.cy, opc->name, (int) opc->length);
+		}
+		/*
 		if (opcode_ext_group[inst->type][inst->op[inst->op_len - 1]] != 0xFF)
 		{
 			char opext_desc[] = "Opcode extension ";
@@ -279,6 +289,7 @@ void CodeUnit_MODRM(CodeUnit *this, void *window, void *context)
 			struct opcode_ext *ext = &opcode_ext_table[opcode_ext_group[inst->type][inst->op[inst->op_len - 1]]][inst->modrm.bits.reg];
 			TextOutA(context, pos.cx + prefixSize.cx + extSize.cx, pos.cy, ext->name, ext->lengen);
 		}
+		*/
 		else
 		{
 			TextOutA(context, pos.cx + prefixSize.cx, pos.cy, regid[inst->modrm.bits.reg], 3);
