@@ -3,7 +3,6 @@
 #include "WindowMessage.h"
 #include "WindowStyles.h"
 #include "Code.h"
-#include "kernel32f.h"
 #include "user32f.h"
 #include "gdi32f.h"
 #include "Text.h"
@@ -231,7 +230,9 @@ int WinMain(void *ists, void *prv, char *cmd, int show)
 
 #ifndef CMAKE_BUILD
 
+#include "kernel32f.h"
 #include "ShowWindowFlag.h"
+
 void WinMainCRTStartup(void)
 {
 	STARTUPINFOW si = {0};
