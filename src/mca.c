@@ -598,6 +598,9 @@ int mca_imm_size(struct instruction *instr, size_t val, enum supported_architect
 				return 2;
 			return 4;
 		case z:
+			if (instr->set_prefix & OS)
+				return 2;
+			return 4;
 		case z1:
 			return 8;
 		case p:
