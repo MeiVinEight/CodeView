@@ -280,7 +280,7 @@ const opcode opcode_ext_table[] = {
 	/*  69 */ {3, "BTS"},
 	/*  70 */ {3, "BTR"},
 	/*  71 */ {3, "BTC"},
-	/*  72 */ {8, "CMPXCH8B"}, // Mq
+	/*  72 */ {9, "CMPXCHG8B"}, // Mq
 	/*  73 */ {10, "CMPXCHG16B"}, // Mdq
 	/*  74 */ {7, "VMPTRLD"}, // Mq
 	/*  75 */ {7, "VMPTRST"}, // Mq
@@ -521,6 +521,41 @@ const BYTE opcode_map[][256] = {
 		/*D*/ 0x02, 0x02, 0x02, 0x02, 0xFF, 0xFF, 0xFF, 0xBC, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, /* D8 - DF: X87 FPU */
 		/*E*/ 0xBD, 0xBE, 0xBF, 0xC0, 0xC1, 0xC1, 0xC2, 0xC2, 0xC4, 0xC3, 0xC3, 0xC3, 0xC1, 0xC1, 0xC2, 0xC2,
 		/*F*/ 0xFF, 0xC5, 0xFF, 0xFF, 0xC6, 0xC7, 0x03, 0x03, 0xC8, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0x04, 0x05
+	}
+};
+const char registers[16][4] = {
+	"RAX",
+	"RCX",
+	"RDX",
+	"RBX",
+	"RSP",
+	"RBP",
+	"RSI",
+	"RDI",
+	"R8",
+	"R9",
+	"R10",
+	"R11",
+	"R12",
+	"R13",
+	"R14",
+	"R15",
+};
+/*
+* 0  NONE
+* 1  [FULL REG]
+* 2  [G(b/v)]|[E(b/v)]
+* 3  [AX], [I(b/v)]
+*/
+const BYTE operand_type[][256] = {
+	{
+		2, 2, 2, 2, 3, 3, 0, 0, 2, 2, 2, 2, 3, 3, 0, 0,
+		2, 2, 2, 2, 3, 3, 0, 0, 2, 2, 2, 2, 3, 3, 0, 0,
+		2, 2, 2, 2, 3, 3, 0, 0, 2, 2, 2, 2, 3, 3, 0, 0,
+		2, 2, 2, 2, 3, 3, 0, 0, 2, 2, 2, 2, 3, 3, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		0, 0, 0, 2, 0, 0, 0, 0,
 	}
 };
 
@@ -879,5 +914,32 @@ const opcode *find_opcode_extension(struct instruction *inst)
 	}
 	if (opc_idx)
 		return &opcode_ext_table[opc_idx];
+	return 0;
+}
+const opcode *find_opcode(struct instruction *inst)
+{
+	BYTE opc = inst->op[inst->op_len - 1];
+	BYTE idx = opcode_map[inst->op_len - 1][opc];
+	if (idx < 0x80)
+	{
+		if (opc == 48 && !(inst->set_field | REX && inst->rex.bits.rex_w))
+			return 0; // MOVSXD is only available in 64-bit mode
+		return find_opcode_extension(inst);
+	}
+	else
+	{
+		if (idx < 0xFE)
+			return &opcode_1_table[idx - 0x80];
+		else if (idx == 0xFE)
+		{
+			if (opc == 0x90)
+			{
+				if (inst->set_field | REX && (inst->rex.bits.rex_w || inst->rex.bits.rex_b))
+					return &opcode_1_table[0xA1 - 0x80];
+				else
+					return &opcode_ext_table[1];
+			}
+		}
+	}
 	return 0;
 }

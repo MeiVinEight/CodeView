@@ -21,6 +21,7 @@ void CodeUnit_paint(CodeUnit *, void *, void *);
 SIZE CodeUnit_position(CodeUnit *, void *, SIZE *);
 SIZE CodeUnit_size(CodeUnit *, void *);
 
+void CodeUnit_DASM(CodeUnit *, void *, void *);
 void CodeUnit_REX(CodeUnit *, void *, void *);
 void CodeUnit_MODRM(CodeUnit *, void *, void *);
 

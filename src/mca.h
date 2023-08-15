@@ -209,8 +209,10 @@
 
 void *__cdecl memcpy(void *, const void *, QWORD);
 void *__cdecl memset(void *, int, QWORD);
+char *__cdecl strcpy(char *, const char *);
 #pragma intrinsic(memcpy)
 #pragma intrinsic(memset)
+#pragma intrinsic(strcpy)
 
 #define  _ENABLE_RAW_BYTES 1
 #define  _ENABLE_VEX_INFO  1
@@ -534,6 +536,8 @@ extern const BYTE opcode_ext_pfx_table[][3];
 extern const BYTE opcode_ext_mod_table[][2];
 extern const BYTE opcode_ext_grp_table[];
 extern const BYTE opcode_map[][256];
+extern const char registers[16][4];
+extern const BYTE operand_type[][256];
 
 enum jmp_type
 {
@@ -724,5 +728,6 @@ int mca_vex_size(struct instruction *instr, enum supported_architecture arch, co
 void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, BYTE vex_size);
 int find_legacy_prefix(struct instruction *, BYTE);
 const opcode *find_opcode_extension(struct instruction *);
+const opcode *find_opcode(struct instruction *);
 
 #endif //MCA_H

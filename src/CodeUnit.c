@@ -23,12 +23,13 @@ void CodeUnit_paint(CodeUnit *this, void *window, void *context)
 	FrameRgn(context, range, brush, 1, 1);
 	DeleteObject(brush);
 
-	if (this->code->mouse)
+	if (this->code->mouse && this->code->mouse->unit)
 	{
-		if (this->code->mouse->unit)
-		{
-			this->code->mouse->unit(this, window, context);
-		}
+		this->code->mouse->unit(this, window, context);
+	}
+	else
+	{
+		CodeUnit_DASM(this, window, context);
 	}
 }
 SIZE CodeUnit_position(CodeUnit *this, void *context, SIZE *client)
@@ -42,6 +43,178 @@ SIZE CodeUnit_size(CodeUnit *this, void *context)
 	return size;
 }
 
+int get_reg(struct instruction *inst, BYTE reg, char *buf, BYTE size)
+{
+	if (inst->set_field & REX)
+	{
+		reg |= inst->rex.bits.rex_r << 3;
+	}
+	char namebuf[4];
+	char *name = namebuf;
+	int len = 3;
+	if (reg == 8 || reg == 9)
+		len = 2;
+	memcpy(name, registers[reg], len);
+	switch (size)
+	{
+		case 0:
+		case 1:
+		{
+			if (reg > 7)
+				name[len++] = (size == 0) ? 'B' : 'W';
+			if (reg < 8)
+			{
+				if (size == 0)
+					name[len - 1] = 'L';
+				name++;
+				len--;
+			}
+			break;
+		}
+		case 2:
+		{
+			if (reg > 7)
+				name[len++] = 'D';
+			else
+				name[0] = 'E';
+			break;
+		}
+	}
+
+	memcpy(buf, name, len);
+	return len;
+}
+int decode_reg(struct instruction *inst, char *buf, BYTE size)
+{
+	BYTE reg = inst->modrm.bits.reg;
+	return get_reg(inst, reg, buf, size);
+}
+/*
+* type:
+* 0  MOD R/M Memory
+*/
+int decode_mem(struct instruction *inst, char *buf, BYTE addressSize, BYTE operandSize, BYTE type)
+{
+	char membuf[32];
+	char *mem = membuf;
+	int len = 0;
+	switch (operandSize)
+	{
+		case 0:
+		{
+			strcpy(mem, "BYTE PTR");
+			len += 8;
+			break;
+		}
+		case 1:
+		case 2:
+		case 3:
+		{
+			if (operandSize > 1)
+			{
+				mem[len++] = "DQ"[operandSize - 2];
+			}
+			strcpy(mem + len, "WORD PTR");
+			len += 8;
+			break;
+		}
+	}
+	mem[len++] = '[';
+	switch (inst->modrm.bits.mod)
+	{
+		case 0:
+		{
+			if (inst->modrm.bits.rm == 4)
+			{
+				// SIB with no displacement
+			}
+			else if (inst->modrm.bits.rm == 5)
+			{
+				strcpy(mem + len, "RIP+");
+				len += 4;
+				// Displacement only
+				const char hex[16] = "0123456789ABCDEF";
+				BYTE *disp = (BYTE *) (&inst->disp);
+				disp += 4;
+				for (int i = 0; i < 4; i++)
+				{
+					disp--;
+					mem[len++] = hex[((*disp) >> 4) & 0xF];
+					mem[len++] = hex[((*disp) >> 0) & 0xF];
+				}
+			}
+			else
+			{
+				len += get_reg(inst, inst->modrm.bits.rm, mem + len, addressSize);
+			}
+			break;
+		}
+	}
+	mem[len++] = ']';
+	memcpy(buf, mem, len);
+	return len;
+}
+void CodeUnit_DASM(CodeUnit *this, void *window, void *context)
+{
+	struct instruction *inst = &this->code->inst;
+	BYTE opcb = inst->op[inst->op_len - 1];
+	void *font = SelectObject(context, this->codeFont);
+
+	char buf[32] = {0};
+	DWORD idx = 0;
+	const opcode *opc = find_opcode(inst);
+	if (opc)
+	{
+		memcpy(buf + idx, opc->name, opc->length);
+		idx += opc->length;
+		BYTE ot = operand_type[inst->op_len - 1][opcb];
+		if (ot)
+		{
+			buf[idx++] = ' ';
+			switch (ot)
+			{
+				case 2:
+				{
+					BYTE addressSize = 3;
+					if (find_legacy_prefix(inst, 0x67))
+						addressSize -= 1;
+
+					BYTE operandSize = (2 * (opcb & 1));
+					if (operandSize == 2)
+					{
+						if (find_legacy_prefix(inst, 0x66))
+							operandSize = 1;
+						if (inst->set_field & REX && inst->rex.bits.rex_w)
+							operandSize = 3;
+					}
+
+					if (opcb & 2)
+					{
+						idx += decode_reg(inst, buf + idx, operandSize);
+						buf[idx++] = ',';
+						buf[idx++] = ' ';
+						idx += decode_mem(inst, buf + idx, addressSize, operandSize, 0);
+					}
+					else
+					{
+						idx += decode_mem(inst, buf + idx, addressSize, operandSize, 0);
+						buf[idx++] = ',';
+						buf[idx++] = ' ';
+						idx += decode_reg(inst, buf + idx, operandSize);
+					}
+					break;
+				}
+			}
+		}
+	}
+	SIZE textSize = {0, 0};
+	GetTextExtentPoint32A(context, buf, (int) idx, &textSize);
+
+	SIZE pos = {(long) (this->width - textSize.cx) / 2, 10};
+	TextOutA(context, pos.cx, pos.cy, buf, (int) idx);
+
+	SelectObject(context, font);
+}
 void CodeUnit_REX(CodeUnit *this, void *window, void *context)
 {
 	void *font = SelectObject(context, this->codeFont);
@@ -263,8 +436,6 @@ void CodeUnit_MODRM(CodeUnit *this, void *window, void *context)
 	}
 	pos.cy += charSize.cy;
 
-	char regid[8][3] = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI"};
-
 	{
 		const char buf[] = "REG = 000: ";
 		SIZE prefixSize = {0, 0};
@@ -279,20 +450,9 @@ void CodeUnit_MODRM(CodeUnit *this, void *window, void *context)
 			TextOutA(context, pos.cx + prefixSize.cx, pos.cy, opext_desc, 17);
 			TextOutA(context, pos.cx + prefixSize.cx + extSize.cx, pos.cy, opc->name, (int) opc->length);
 		}
-		/*
-		if (opcode_ext_group[inst->type][inst->op[inst->op_len - 1]] != 0xFF)
-		{
-			char opext_desc[] = "Opcode extension ";
-			SIZE extSize = {0, 0};
-			GetTextExtentPoint32A(context, opext_desc, 17, &extSize);
-			TextOutA(context, pos.cx + prefixSize.cx, pos.cy, opext_desc, 17);
-			struct opcode_ext *ext = &opcode_ext_table[opcode_ext_group[inst->type][inst->op[inst->op_len - 1]]][inst->modrm.bits.reg];
-			TextOutA(context, pos.cx + prefixSize.cx + extSize.cx, pos.cy, ext->name, ext->lengen);
-		}
-		*/
 		else
 		{
-			TextOutA(context, pos.cx + prefixSize.cx, pos.cy, regid[inst->modrm.bits.reg], 3);
+			TextOutA(context, pos.cx + prefixSize.cx, pos.cy, registers[inst->modrm.bits.reg], 3);
 		}
 		pos.cy += charSize.cy;
 	}
@@ -312,7 +472,7 @@ void CodeUnit_MODRM(CodeUnit *this, void *window, void *context)
 		}
 		else
 		{
-			TextOutA(context, pos.cx + prefixSize.cx, pos.cy, regid[rm], 3);
+			TextOutA(context, pos.cx + prefixSize.cx, pos.cy, registers[rm], 3);
 		}
 	}
 
