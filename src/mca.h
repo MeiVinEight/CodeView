@@ -210,9 +210,11 @@
 void *__cdecl memcpy(void *, const void *, QWORD);
 void *__cdecl memset(void *, int, QWORD);
 char *__cdecl strcpy(char *, const char *);
+unsigned long long __cdecl strlen(const char *);
 #pragma intrinsic(memcpy)
 #pragma intrinsic(memset)
 #pragma intrinsic(strcpy)
+#pragma intrinsic(strlen)
 
 #define  _ENABLE_RAW_BYTES 1
 #define  _ENABLE_VEX_INFO  1
@@ -520,21 +522,17 @@ static size_t imm_byte_3b_3A[256] = {
 
 typedef struct opcode
 {
-	DWORD length;
-	char name[16];
+	const char *name;
+	QWORD length;
 } opcode;
 
-#define PFX_NO 0
-#define PFX_66 1
-#define PFX_F3 2
-
-extern const opcode opcode_ext_table[];
-extern const opcode opcode_1_table[];
+extern const char opcode_table[][16];
 extern const BYTE opcode_ext_r_m_table[][8];
 extern const BYTE opcode_ext_reg_table[][8];
 extern const BYTE opcode_ext_pfx_table[][3];
 extern const BYTE opcode_ext_mod_table[][2];
 extern const BYTE opcode_ext_grp_table[];
+extern const BYTE opcode_pfx_table[][8];
 extern const BYTE opcode_map[][256];
 extern const char registers[16][4];
 extern const BYTE operand_type[][256];
@@ -559,22 +557,19 @@ enum prefixes
 	AS = 128,// 0x67
 	REPNE = 256,
 	REPE = 512,
-	OP64 = 1024,
-	VEX = 2048
 };
 
 enum instruction_feature
 {
 	PREFIX = 1,
 	ESCAPE = 2, // 0x0F
-	OP = 4,
-	OP3B = 8,
 	MODRM = 16,
 	SIB = 32,
 	REX = 64,
 	DISP = 128,
 	IMM = 512,
 	FPU = 1024,
+	VEX = 2048
 };
 
 /*
@@ -727,7 +722,7 @@ int mca_decode_2b(struct instruction *instr, enum supported_architecture arch, c
 int mca_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data);
 void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, BYTE vex_size);
 int find_legacy_prefix(struct instruction *, BYTE);
-const opcode *find_opcode_extension(struct instruction *);
-const opcode *find_opcode(struct instruction *);
+opcode find_opcode_extension(struct instruction *);
+opcode find_opcode(struct instruction *);
 
 #endif //MCA_H

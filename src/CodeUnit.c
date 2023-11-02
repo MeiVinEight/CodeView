@@ -162,11 +162,11 @@ void CodeUnit_DASM(CodeUnit *this, void *window, void *context)
 
 	char buf[32] = {0};
 	DWORD idx = 0;
-	const opcode *opc = find_opcode(inst);
-	if (opc)
+	opcode opc = find_opcode(inst);
+	if (opc.name)
 	{
-		memcpy(buf + idx, opc->name, opc->length);
-		idx += opc->length;
+		strcpy(buf + idx, opc.name);
+		idx += opc.length;
 		BYTE ot = operand_type[inst->op_len - 1][opcb];
 		if (ot)
 		{
@@ -439,16 +439,16 @@ void CodeUnit_MODRM(CodeUnit *this, void *window, void *context)
 	{
 		const char buf[] = "REG = 000: ";
 		SIZE prefixSize = {0, 0};
-		GetTextExtentPoint32A(context, buf, 11, &prefixSize);
-		TextOutA(context, pos.cx, pos.cy, buf, 11);
-		const opcode *opc = find_opcode_extension(inst);
-		if (opc)
+		GetTextExtentPoint32A(context, (char *) buf, 11, &prefixSize);
+		TextOutA(context, pos.cx, pos.cy, (char *) buf, 11);
+		opcode opc = find_opcode_extension(inst);
+		if (opc.name)
 		{
 			char opext_desc[] = "Opcode extension ";
 			SIZE extSize = {0, 0};
 			GetTextExtentPoint32A(context, opext_desc, 17, &extSize);
 			TextOutA(context, pos.cx + prefixSize.cx, pos.cy, opext_desc, 17);
-			TextOutA(context, pos.cx + prefixSize.cx + extSize.cx, pos.cy, opc->name, (int) opc->length);
+			TextOutA(context, pos.cx + prefixSize.cx + extSize.cx, pos.cy, opc.name, (int) opc.length);
 		}
 		else
 		{
