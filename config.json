@@ -1,22 +1,25 @@
 {
 	"name": "CodeView",
 	"source": "src",
-	"include": "include",
-	"exe": ".release\\CodeView",
-	"obj": ".release\\",
+	"include": ["include", "MCA\\src"],
+	"exe": ".compile\\CodeView",
+	"obj": ".compile\\",
 	"resource": "res",
+	"subproject": ["MCA"],
+	"depends": ["MCA"],
 	"options":
 	[
-		"/Od",
-		"/Zi",
+		"/O1",
 		"/GS-",
 		"/link",
 		"/NOD",
 		"/SUBSYSTEM:CONSOLE",
 		"/INCREMENTAL:NO",
+		"/LIBPATH:.compile",
 		"kernel32.lib",
 		"user32.lib",
 		"gdi32.lib",
-		"Memory.lib"
+		"Memory.lib",
+		"MCA.lib"
 	]
 }

@@ -204,8 +204,11 @@
 
 #include "mca.h"
 
-static size_t *imm_table[4] = {0, imm_byte_2b, imm_byte_3b_38, imm_byte_3b_3A};
-static size_t *modrm_table[4] = {0, modrm_2b, modreg_3b_38, modreg_3b_3A};
+void* memcpy(void*, const void*, unsigned long long);
+void* memset(void*, int, unsigned long long);
+
+static BYTE *imm_table[4] = {0, imm_byte_2b, imm_byte_3b_38, imm_byte_3b_3A};
+static BYTE *modrm_table[4] = {0, modrm_2b, modreg_3b_38, modreg_3b_3A};
 const char registers[16][4] = {
 	"RAX",
 	"RCX",
@@ -303,7 +306,7 @@ int mca_displacement_size(BYTE mod, BYTE rm)
 		return 1;
 	return 0;
 }
-int mca_imm_size(struct instruction *instr, size_t val, enum supported_architecture arch)
+int mca_imm_size(struct instruction *instr, QWORD val, enum supported_architecture arch)
 {
 	switch (val)
 	{
@@ -350,9 +353,9 @@ int mca_imm_size(struct instruction *instr, size_t val, enum supported_architect
 			return 0;
 	}
 }
-void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *start_data, const size_t *modrmTable, const size_t *immTable, const size_t *jcc_table)
+void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *start_data, const BYTE *modrmTable, const BYTE*immTable, const BYTE*jcc_table)
 {
-	size_t val;
+	QWORD val;
 	if ((val = modrmTable[instr->op[instr->op_len - 1]]))
 	{
 		instr->set_field |= MODRM;
@@ -534,7 +537,7 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
 		curr = (BYTE) *(start_data + instr->length);
 	}
 
-	size_t vex_size = mca_vex_size(instr, arch, start_data);
+	QWORD vex_size = mca_vex_size(instr, arch, start_data);
 	if (vex_size)
 		mca_vex_decode(instr, arch, start_data, vex_size);
 	else
@@ -729,4 +732,41 @@ opcode find_opcode(struct instruction *inst)
 		}
 	}
 	return ret;
+}
+int get_reg(BYTE reg, char* buf, BYTE size)
+{
+	char namebuf[4];
+	char* name = namebuf;
+	int len = 3;
+	if (reg == 8 || reg == 9)
+		len = 2;
+	memcpy(name, registers[reg], len);
+	switch (size)
+	{
+		case 0:
+		case 1:
+		{
+			if (reg > 7)
+				name[len++] = (size == 0) ? 'B' : 'W';
+			if (reg < 8)
+			{
+				if (size == 0)
+					name[len - 1] = 'L';
+				name++;
+				len--;
+			}
+			break;
+		}
+		case 2:
+		{
+			if (reg > 7)
+				name[len++] = 'D';
+			else
+				name[0] = 'E';
+			break;
+		}
+	}
+
+	memcpy(buf, name, len);
+	return len;
 }

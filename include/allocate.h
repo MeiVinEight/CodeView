@@ -12,6 +12,9 @@ MEMORYAPI void *__cdecl malloc(unsigned long long);
 MEMORYAPI void *__cdecl realloc(void *, unsigned long long);
 MEMORYAPI void __cdecl free(void *);
 
+MEMORYAPI void *memcpy(void *, const void *, unsigned long long);
+MEMORYAPI void *memset(void *, int, unsigned long long);
+
 #ifdef __cplusplus
 }
 #endif

@@ -207,13 +207,13 @@
 
 #include <WinType.h>
 
-void *__cdecl memcpy(void *, const void *, QWORD);
-void *__cdecl memset(void *, int, QWORD);
-char *__cdecl strcpy(char *, const char *);
+#ifdef MCASHARED
+#define MCAAPI __declspec(dllexport)
+#else
+#define MCAAPI __declspec(dllimport)
+#endif
+
 unsigned long long __cdecl strlen(const char *);
-#pragma intrinsic(memcpy)
-#pragma intrinsic(memset)
-#pragma intrinsic(strcpy)
 #pragma intrinsic(strlen)
 
 #define  _ENABLE_RAW_BYTES 1
@@ -234,7 +234,7 @@ enum decode_status
 
 //
 // instruction prefix look-up table
-static size_t x86_64_prefix[256] = {
+static BYTE x86_64_prefix[256] = {
 	//       00  01  02  03  04  05  06  07  08  09  0A  0B  0C  0D  0E  0F
 	/* 00 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL,
 	/* 10 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -259,7 +259,7 @@ static size_t x86_64_prefix[256] = {
 //
 #define X87_FPU  2
 
-static size_t modrm_1b[256] = {
+static BYTE modrm_1b[256] = {
 	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
 	/* 00 */ 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0,
 	/* 10 */ 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0,
@@ -289,7 +289,7 @@ static size_t modrm_1b[256] = {
 #define   gr3b  9 // byte (imm exists only if mod.reg == 0)
 #define   gr3z  10 // word, dword depending on OS (imm exists only if mod.reg == 0)
 
-static size_t imm_byte_1b[256] = {
+static BYTE imm_byte_1b[256] = {
 	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
 	/* 00 */ 0, 0, 0, 0, b, z, 0, 0, 0, 0, 0, 0, b, z, 0, 0,
 	/* 10 */ 0, 0, 0, 0, b, z, 0, 0, 0, 0, 0, 0, b, z, 0, 0,
@@ -325,7 +325,7 @@ static size_t imm_byte_1b[256] = {
 #define jc2 0x21
 
 // check if the OP is Jcc or JMP
-static size_t op1b_labels[256] = {
+static BYTE op1b_labels[256] = {
 	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
 	/* 00 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	/* 10 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -365,7 +365,7 @@ static size_t op1b_labels[256] = {
 #define  P7   (OE  | O66 | OF2 | OF3)
 #define  P8   (O66 | OF2 | OF3)
 
-static size_t modrm_2b[256] = {
+static BYTE modrm_2b[256] = {
 	//       00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
 	/* 00 */ P1, P1, P1, P1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	/* 10 */ P7, P7, P7, P2, P2, P2, P6, P2, P1, 0, 0, 0, 0, 0, 0, P1,
@@ -385,7 +385,7 @@ static size_t modrm_2b[256] = {
 	/* F0 */ OF2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, 0
 };
 
-static size_t imm_byte_2b[256] = {
+static BYTE imm_byte_2b[256] = {
 	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
 	/* 00 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	/* 10 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -406,7 +406,7 @@ static size_t imm_byte_2b[256] = {
 };
 
 // check if the OP is Jcc or JMP
-static size_t op2b_labels[256] = {
+static BYTE op2b_labels[256] = {
 	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
 	/* 00 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	/* 10 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -435,7 +435,7 @@ static size_t op2b_labels[256] = {
 
 //
 // 3-byte OP look-up table (0x38)
-static size_t modreg_3b_38[256] = {
+static BYTE modreg_3b_38[256] = {
 	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
 	/* 00 */ P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, O66, O66, O66, O66,
 	/* 10 */ O66, 0, 0, O66, O66, O66, O66, O66, 0, 0, 0, 0, O66, O66, O66, 0,
@@ -455,7 +455,7 @@ static size_t modreg_3b_38[256] = {
 	/* F0 */ OP3, OP3, OE, 0, 0, OP2, OP4, P7, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-static size_t imm_byte_3b_38[256] = {
+static BYTE imm_byte_3b_38[256] = {
 	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
 	/* 00 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	/* 10 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -480,7 +480,7 @@ static size_t imm_byte_3b_38[256] = {
 //
 // 3-byte OP look-up table (0x3A)
 
-static size_t modreg_3b_3A[256] = {
+static BYTE modreg_3b_3A[256] = {
 	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
 	/* 00 */ O66, O66, O66, 0, O66, O66, O66, 0, O66, O66, O66, O66, O66, O66, O66, OP5,
 	/* 10 */ 0, 0, 0, 0, O66, O66, O66, O66, O66, O66, 0, 0, 0, O66, 0, 0,
@@ -500,7 +500,7 @@ static size_t modreg_3b_3A[256] = {
 	/* F0 */ OF2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-static size_t imm_byte_3b_3A[256] = {
+static BYTE imm_byte_3b_3A[256] = {
 	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
 	/* 00 */ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
 	/* 10 */ 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0,
@@ -526,16 +526,16 @@ typedef struct opcode
 	QWORD length;
 } opcode;
 
-extern const char opcode_table[][16];
-extern const BYTE opcode_ext_r_m_table[][8];
-extern const BYTE opcode_ext_reg_table[][8];
-extern const BYTE opcode_ext_pfx_table[][3];
-extern const BYTE opcode_ext_mod_table[][2];
-extern const BYTE opcode_ext_grp_table[];
-extern const BYTE opcode_pfx_table[][8];
-extern const BYTE opcode_map[][256];
-extern const char registers[16][4];
-extern const BYTE operand_type[][256];
+MCAAPI extern const char opcode_table[][16];
+MCAAPI extern const BYTE opcode_ext_r_m_table[][8];
+MCAAPI extern const BYTE opcode_ext_reg_table[][8];
+MCAAPI extern const BYTE opcode_ext_pfx_table[][3];
+MCAAPI extern const BYTE opcode_ext_mod_table[][2];
+MCAAPI extern const BYTE opcode_ext_grp_table[];
+MCAAPI extern const BYTE opcode_pfx_table[][8];
+MCAAPI extern const BYTE opcode_map[][256];
+MCAAPI extern const char registers[16][4];
+MCAAPI extern const BYTE operand_type[][256];
 
 enum jmp_type
 {
@@ -713,16 +713,17 @@ struct instruction
 //
 // Functions
 //
-int mca_decode(struct instruction *instr, enum supported_architecture arch, char *data_src, int offset);
-void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *data_src, const size_t *modrmTable, const size_t *immTable, const size_t *jcc_table);
-int mca_check_sib(BYTE mod, BYTE rm);
-int mca_displacement_size(BYTE mod, BYTE rm);
-int mca_imm_size(struct instruction *instr, size_t val, enum supported_architecture arch);
-int mca_decode_2b(struct instruction *instr, enum supported_architecture arch, const char *data_src);
-int mca_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data);
-void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, BYTE vex_size);
-int find_legacy_prefix(struct instruction *, BYTE);
-opcode find_opcode_extension(struct instruction *);
-opcode find_opcode(struct instruction *);
+MCAAPI int mca_decode(struct instruction *instr, enum supported_architecture arch, char *data_src, int offset);
+MCAAPI void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *data_src, const BYTE*modrmTable, const BYTE*immTable, const BYTE*jcc_table);
+MCAAPI int mca_check_sib(BYTE mod, BYTE rm);
+MCAAPI int mca_displacement_size(BYTE mod, BYTE rm);
+MCAAPI int mca_imm_size(struct instruction *instr, QWORD val, enum supported_architecture arch);
+MCAAPI int mca_decode_2b(struct instruction *instr, enum supported_architecture arch, const char *data_src);
+MCAAPI int mca_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data);
+MCAAPI void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, BYTE vex_size);
+MCAAPI int find_legacy_prefix(struct instruction *, BYTE);
+MCAAPI opcode find_opcode_extension(struct instruction *);
+MCAAPI opcode find_opcode(struct instruction *);
+MCAAPI int get_reg(BYTE, char *, BYTE);
 
 #endif //MCA_H

@@ -40,7 +40,7 @@ struct std_type_info_data
 #endif
 
 
-
+#pragma comment(linker, "/EXPORT:??_7type_info@@6B@")
 extern "C++"
 {
 
@@ -55,7 +55,7 @@ class type_info
 	TYPEINFOAPI bool before(const type_info &other) const noexcept;
 	TYPEINFOAPI const char *name() const noexcept;
 	TYPEINFOAPI const char *raw_name() const noexcept;
-	virtual ~type_info() noexcept;
+	TYPEINFOAPI virtual ~type_info() noexcept;
 
 	private:
 	mutable std_type_info_data data;
