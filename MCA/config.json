@@ -2,7 +2,7 @@
 	"name": "MCA",
 	"source": "src",
 	"include": "..\\include",
-	"exe": "..\\.compile\\MCA",
+	"exe": "..\\.compile\\mca",
 	"obj": ".compile\\",
 	"definitions": ["MCASHARED"],
 	"options":
