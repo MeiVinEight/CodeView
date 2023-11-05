@@ -1,0 +1,610 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{e28dcd1c-38b0-463d-b7a8-13bc6f198913}</ProjectGuid>
+    <RootNamespace>MCA</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN />
+    <EnableFuzzer />
+    <SpectreMitigation />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN />
+    <EnableFuzzer />
+    <SpectreMitigation />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN />
+    <EnableFuzzer />
+    <SpectreMitigation />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN />
+    <EnableFuzzer />
+    <SpectreMitigation />
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ExecutablePath>$(VC_ExecutablePath_x64);$(CommonExecutablePath)</ExecutablePath>
+    <IncludePath>$(SolutionDir)include</IncludePath>
+    <OutDir>$(SolutionDir).compile\</OutDir>
+    <IntDir>.compile\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+    <IgnoreImportLibrary />
+    <GenerateManifest />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ExecutablePath>$(VC_ExecutablePath_x64);$(CommonExecutablePath)</ExecutablePath>
+    <IncludePath>$(SolutionDir)include</IncludePath>
+    <OutDir>$(SolutionDir).compile\</OutDir>
+    <IntDir>.compile\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+    <IgnoreImportLibrary />
+    <GenerateManifest />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir).compile\</OutDir>
+    <IntDir>.compile\</IntDir>
+    <ExecutablePath>$(VC_ExecutablePath_x86);$(CommonExecutablePath)</ExecutablePath>
+    <IncludePath>$(SolutionDir)include</IncludePath>
+    <LinkIncremental>false</LinkIncremental>
+    <IgnoreImportLibrary />
+    <GenerateManifest />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir).compile\</OutDir>
+    <IntDir>.compile\</IntDir>
+    <ExecutablePath>$(VC_ExecutablePath_x86);$(CommonExecutablePath)</ExecutablePath>
+    <IncludePath>$(SolutionDir)include</IncludePath>
+    <LinkIncremental>false</LinkIncremental>
+    <IgnoreImportLibrary />
+    <GenerateManifest />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>
+      </WarningLevel>
+      <SDLCheck>
+      </SDLCheck>
+      <PreprocessorDefinitions>MCASHARED</PreprocessorDefinitions>
+      <ConformanceMode>
+      </ConformanceMode>
+      <ScanSourceForModuleDependencies />
+      <TranslateIncludes />
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <SupportJustMyCode />
+      <SuppressStartupBanner />
+      <TreatWarningAsError />
+      <DiagnosticsFormat />
+      <Optimization>Disabled</Optimization>
+      <InlineFunctionExpansion />
+      <IntrinsicFunctions />
+      <FavorSizeOrSpeed />
+      <OmitFramePointers />
+      <EnableFiberSafeOptimizations />
+      <WholeProgramOptimization />
+      <UndefineAllPreprocessorDefinitions />
+      <IgnoreStandardIncludePath />
+      <PreprocessToFile />
+      <PreprocessSuppressLineNumbers />
+      <PreprocessKeepComments />
+      <MinimalRebuild />
+      <ExceptionHandling />
+      <SmallerTypeCheck />
+      <BasicRuntimeChecks />
+      <RuntimeLibrary />
+      <StructMemberAlignment />
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableEnhancedInstructionSet />
+      <FloatingPointModel />
+      <IntelJCCErratum />
+      <DisableLanguageExtensions />
+      <TreatWChar_tAsBuiltInType />
+      <ForceConformanceInForLoopScope />
+      <RemoveUnreferencedCodeData />
+      <LanguageStandard />
+      <LanguageStandard_C />
+      <PrecompiledHeader />
+      <PrecompiledHeaderFile />
+      <PrecompiledHeaderOutputFile />
+      <ExpandAttributedSource />
+      <AssemblerOutput />
+      <AssemblerListingLocation />
+      <ModuleOutputFile />
+      <ModuleDependenciesFile />
+      <GenerateXMLDocumentationFiles />
+      <XMLDocumentationFileName />
+      <GenerateSourceDependencies />
+      <SourceDependenciesFile />
+      <BrowseInformation />
+      <BrowseInformationFile />
+      <TreatAngleIncludeAsExternal />
+      <ExternalWarningLevel />
+      <DisableAnalyzeExternal />
+      <CallingConvention />
+      <CompileAs />
+      <ShowIncludes />
+      <UseFullPaths />
+      <OmitDefaultLibName />
+      <ErrorReporting />
+      <BuildStlModules />
+    </ClCompile>
+    <Link>
+      <SubSystem>
+      </SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ShowProgress />
+      <IncrementalLinkDatabaseFile />
+      <SuppressStartupBanner />
+      <RegisterOutput />
+      <PerUserRedirection />
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies />
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <ManifestFile />
+      <AllowIsolation />
+      <EnableUAC />
+      <UACExecutionLevel />
+      <UACUIAccess />
+      <ProgramDatabaseFile />
+      <GenerateMapFile />
+      <MapExports />
+      <SwapRunFromCD />
+      <SwapRunFromNET />
+      <Driver />
+      <ProfileGuidedDatabase />
+      <LinkTimeCodeGenerationObjectFile />
+      <IgnoreEmbeddedIDL />
+      <TypeLibraryResourceID />
+      <NoEntryPoint>true</NoEntryPoint>
+      <SetChecksum />
+      <RandomizedBaseAddress />
+      <DataExecutionPrevention />
+      <TurnOffAssemblyGeneration />
+      <ImportLibrary />
+      <TargetMachine />
+      <Profile />
+      <CLRImageType />
+      <LinkErrorReporting />
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies />
+    </ProjectReference>
+    <ProjectReference>
+      <UseLibraryDependencyInputs />
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>
+      </WarningLevel>
+      <FunctionLevelLinking>
+      </FunctionLevelLinking>
+      <IntrinsicFunctions>
+      </IntrinsicFunctions>
+      <SDLCheck>
+      </SDLCheck>
+      <PreprocessorDefinitions>MCASHARED</PreprocessorDefinitions>
+      <ConformanceMode>
+      </ConformanceMode>
+      <ScanSourceForModuleDependencies />
+      <TranslateIncludes />
+      <DebugInformationFormat />
+      <SupportJustMyCode />
+      <SuppressStartupBanner />
+      <TreatWarningAsError />
+      <DiagnosticsFormat />
+      <Optimization>MinSpace</Optimization>
+      <InlineFunctionExpansion />
+      <FavorSizeOrSpeed />
+      <OmitFramePointers />
+      <EnableFiberSafeOptimizations />
+      <WholeProgramOptimization />
+      <UndefineAllPreprocessorDefinitions />
+      <IgnoreStandardIncludePath />
+      <PreprocessToFile />
+      <PreprocessSuppressLineNumbers />
+      <PreprocessKeepComments />
+      <MinimalRebuild />
+      <ExceptionHandling />
+      <SmallerTypeCheck />
+      <BasicRuntimeChecks />
+      <RuntimeLibrary />
+      <StructMemberAlignment />
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableEnhancedInstructionSet />
+      <FloatingPointModel />
+      <IntelJCCErratum />
+      <DisableLanguageExtensions />
+      <TreatWChar_tAsBuiltInType />
+      <ForceConformanceInForLoopScope />
+      <RemoveUnreferencedCodeData />
+      <LanguageStandard />
+      <LanguageStandard_C />
+      <PrecompiledHeader />
+      <PrecompiledHeaderFile />
+      <PrecompiledHeaderOutputFile />
+      <ExpandAttributedSource />
+      <AssemblerOutput />
+      <AssemblerListingLocation />
+      <ModuleOutputFile />
+      <ModuleDependenciesFile />
+      <GenerateXMLDocumentationFiles />
+      <XMLDocumentationFileName />
+      <GenerateSourceDependencies />
+      <SourceDependenciesFile />
+      <BrowseInformation />
+      <BrowseInformationFile />
+      <TreatAngleIncludeAsExternal />
+      <ExternalWarningLevel />
+      <DisableAnalyzeExternal />
+      <CallingConvention />
+      <CompileAs />
+      <ShowIncludes />
+      <UseFullPaths />
+      <OmitDefaultLibName />
+      <ErrorReporting />
+      <BuildStlModules />
+    </ClCompile>
+    <Link>
+      <SubSystem>
+      </SubSystem>
+      <EnableCOMDATFolding>
+      </EnableCOMDATFolding>
+      <OptimizeReferences>
+      </OptimizeReferences>
+      <GenerateDebugInformation>
+      </GenerateDebugInformation>
+      <ShowProgress />
+      <IncrementalLinkDatabaseFile />
+      <SuppressStartupBanner />
+      <RegisterOutput />
+      <PerUserRedirection />
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies />
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <ManifestFile />
+      <AllowIsolation />
+      <EnableUAC />
+      <UACExecutionLevel />
+      <UACUIAccess />
+      <ProgramDatabaseFile />
+      <GenerateMapFile />
+      <MapExports />
+      <SwapRunFromCD />
+      <SwapRunFromNET />
+      <Driver />
+      <ProfileGuidedDatabase />
+      <LinkTimeCodeGeneration />
+      <LinkTimeCodeGenerationObjectFile />
+      <IgnoreEmbeddedIDL />
+      <TypeLibraryResourceID />
+      <NoEntryPoint>true</NoEntryPoint>
+      <SetChecksum />
+      <RandomizedBaseAddress />
+      <DataExecutionPrevention />
+      <TurnOffAssemblyGeneration />
+      <ImportLibrary />
+      <TargetMachine />
+      <Profile />
+      <CLRImageType />
+      <LinkErrorReporting />
+      <ImageHasSafeExceptionHandlers />
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies />
+    </ProjectReference>
+    <ProjectReference>
+      <UseLibraryDependencyInputs />
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>
+      </WarningLevel>
+      <SDLCheck>
+      </SDLCheck>
+      <PreprocessorDefinitions>MCASHARED</PreprocessorDefinitions>
+      <ConformanceMode>
+      </ConformanceMode>
+      <ScanSourceForModuleDependencies />
+      <TranslateIncludes />
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <SupportJustMyCode />
+      <SuppressStartupBanner />
+      <TreatWarningAsError />
+      <DiagnosticsFormat />
+      <Optimization>Disabled</Optimization>
+      <InlineFunctionExpansion />
+      <IntrinsicFunctions />
+      <FavorSizeOrSpeed />
+      <EnableFiberSafeOptimizations />
+      <WholeProgramOptimization />
+      <UndefineAllPreprocessorDefinitions />
+      <IgnoreStandardIncludePath />
+      <PreprocessToFile />
+      <PreprocessSuppressLineNumbers />
+      <PreprocessKeepComments />
+      <MinimalRebuild />
+      <ExceptionHandling />
+      <SmallerTypeCheck />
+      <BasicRuntimeChecks />
+      <RuntimeLibrary />
+      <StructMemberAlignment />
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableEnhancedInstructionSet />
+      <FloatingPointModel />
+      <IntelJCCErratum />
+      <DisableLanguageExtensions />
+      <TreatWChar_tAsBuiltInType />
+      <ForceConformanceInForLoopScope />
+      <RemoveUnreferencedCodeData />
+      <LanguageStandard />
+      <LanguageStandard_C />
+      <PrecompiledHeader />
+      <PrecompiledHeaderFile />
+      <PrecompiledHeaderOutputFile />
+      <ExpandAttributedSource />
+      <AssemblerOutput />
+      <AssemblerListingLocation />
+      <ModuleOutputFile />
+      <ModuleDependenciesFile />
+      <GenerateXMLDocumentationFiles />
+      <XMLDocumentationFileName />
+      <GenerateSourceDependencies />
+      <SourceDependenciesFile />
+      <BrowseInformation />
+      <BrowseInformationFile />
+      <TreatAngleIncludeAsExternal />
+      <ExternalWarningLevel />
+      <DisableAnalyzeExternal />
+      <CallingConvention />
+      <CompileAs />
+      <ShowIncludes />
+      <UseFullPaths />
+      <OmitDefaultLibName />
+      <ErrorReporting />
+      <BuildStlModules />
+    </ClCompile>
+    <Link>
+      <SubSystem>
+      </SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ShowProgress />
+      <IncrementalLinkDatabaseFile />
+      <SuppressStartupBanner />
+      <RegisterOutput />
+      <PerUserRedirection />
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies />
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <ManifestFile />
+      <AllowIsolation />
+      <EnableUAC />
+      <UACExecutionLevel />
+      <UACUIAccess />
+      <ProgramDatabaseFile />
+      <GenerateMapFile />
+      <MapExports />
+      <SwapRunFromCD />
+      <SwapRunFromNET />
+      <Driver />
+      <ProfileGuidedDatabase />
+      <LinkTimeCodeGenerationObjectFile />
+      <IgnoreEmbeddedIDL />
+      <TypeLibraryResourceID />
+      <NoEntryPoint>true</NoEntryPoint>
+      <SetChecksum />
+      <RandomizedBaseAddress />
+      <DataExecutionPrevention />
+      <TurnOffAssemblyGeneration />
+      <ImportLibrary />
+      <TargetMachine />
+      <Profile />
+      <CLRImageType />
+      <LinkErrorReporting />
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies />
+    </ProjectReference>
+    <ProjectReference>
+      <UseLibraryDependencyInputs />
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>
+      </WarningLevel>
+      <FunctionLevelLinking>
+      </FunctionLevelLinking>
+      <IntrinsicFunctions>
+      </IntrinsicFunctions>
+      <SDLCheck>
+      </SDLCheck>
+      <PreprocessorDefinitions>MCASHARED</PreprocessorDefinitions>
+      <ConformanceMode>
+      </ConformanceMode>
+      <ScanSourceForModuleDependencies />
+      <TranslateIncludes />
+      <DebugInformationFormat />
+      <SupportJustMyCode />
+      <SuppressStartupBanner />
+      <TreatWarningAsError />
+      <DiagnosticsFormat />
+      <Optimization>MinSpace</Optimization>
+      <InlineFunctionExpansion />
+      <FavorSizeOrSpeed />
+      <EnableFiberSafeOptimizations />
+      <WholeProgramOptimization />
+      <UndefineAllPreprocessorDefinitions />
+      <IgnoreStandardIncludePath />
+      <PreprocessToFile />
+      <PreprocessSuppressLineNumbers />
+      <PreprocessKeepComments />
+      <MinimalRebuild />
+      <ExceptionHandling />
+      <SmallerTypeCheck />
+      <BasicRuntimeChecks />
+      <RuntimeLibrary />
+      <StructMemberAlignment />
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableEnhancedInstructionSet />
+      <FloatingPointModel />
+      <IntelJCCErratum />
+      <DisableLanguageExtensions />
+      <TreatWChar_tAsBuiltInType />
+      <ForceConformanceInForLoopScope />
+      <RemoveUnreferencedCodeData />
+      <LanguageStandard />
+      <LanguageStandard_C />
+      <PrecompiledHeader />
+      <PrecompiledHeaderFile />
+      <PrecompiledHeaderOutputFile />
+      <ExpandAttributedSource />
+      <AssemblerOutput />
+      <AssemblerListingLocation />
+      <ModuleOutputFile />
+      <ModuleDependenciesFile />
+      <GenerateXMLDocumentationFiles />
+      <XMLDocumentationFileName />
+      <GenerateSourceDependencies />
+      <SourceDependenciesFile />
+      <BrowseInformation />
+      <BrowseInformationFile />
+      <TreatAngleIncludeAsExternal />
+      <ExternalWarningLevel />
+      <DisableAnalyzeExternal />
+      <CallingConvention />
+      <CompileAs />
+      <ShowIncludes />
+      <UseFullPaths />
+      <OmitDefaultLibName />
+      <ErrorReporting />
+      <BuildStlModules />
+    </ClCompile>
+    <Link>
+      <SubSystem>
+      </SubSystem>
+      <EnableCOMDATFolding>
+      </EnableCOMDATFolding>
+      <OptimizeReferences>
+      </OptimizeReferences>
+      <GenerateDebugInformation>
+      </GenerateDebugInformation>
+      <ShowProgress />
+      <IncrementalLinkDatabaseFile />
+      <SuppressStartupBanner />
+      <RegisterOutput />
+      <PerUserRedirection />
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies />
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <ManifestFile />
+      <AllowIsolation />
+      <EnableUAC />
+      <UACExecutionLevel />
+      <UACUIAccess />
+      <ProgramDatabaseFile />
+      <GenerateMapFile />
+      <MapExports />
+      <SwapRunFromCD />
+      <SwapRunFromNET />
+      <Driver />
+      <ProfileGuidedDatabase />
+      <LinkTimeCodeGeneration />
+      <LinkTimeCodeGenerationObjectFile />
+      <IgnoreEmbeddedIDL />
+      <TypeLibraryResourceID />
+      <NoEntryPoint>true</NoEntryPoint>
+      <SetChecksum />
+      <RandomizedBaseAddress />
+      <DataExecutionPrevention />
+      <TurnOffAssemblyGeneration />
+      <ImportLibrary />
+      <TargetMachine />
+      <Profile />
+      <CLRImageType />
+      <LinkErrorReporting />
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies />
+    </ProjectReference>
+    <ProjectReference>
+      <UseLibraryDependencyInputs />
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\intrinsic.c" />
+    <ClCompile Include="src\mca.c" />
+    <ClCompile Include="src\opcode_map.c" />
+    <ClCompile Include="src\opcode_table.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\mca.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
