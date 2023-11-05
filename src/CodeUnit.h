@@ -24,5 +24,6 @@ SIZE CodeUnit_size(CodeUnit *, void *);
 void CodeUnit_DASM(CodeUnit *, void *, void *);
 void CodeUnit_REX(CodeUnit *, void *, void *);
 void CodeUnit_MODRM(CodeUnit *, void *, void *);
+void CodeUnit_SIB(CodeUnit *, void *, void *);
 
 #endif //CODEUNIT_H

@@ -401,5 +401,77 @@ void CodeUnit_SIB(CodeUnit *this, void *window, void *context)
 		DeleteObject(brush);
 	}
 
+
+	pos.cy += charSize.cy + 2;
+
+
+	SelectObject(context, this->textFont);
+
+	BITNAME:
+	{
+		const char sclbuf[] = "SCALE";
+		const char idxbuf[] = "INDEX";
+		const char bsebuf[] = "BASE";
+		SIZE sclnsz = {0, 0};
+		SIZE idxnsz = {0, 0};
+		SIZE bsensz = {0, 0};
+		GetTextExtentPoint32A(context, sclbuf, 5, &sclnsz);
+		GetTextExtentPoint32A(context, idxbuf, 5, &idxnsz);
+		GetTextExtentPoint32A(context, bsebuf, 4, &bsensz);
+		TextOutA(context, pos.cx + 1 + ((sclsz.cx - sclnsz.cx) / 2), pos.cy, sclbuf, 5);
+		TextOutA(context, pos.cx + 1 + sclsz.cx + 1 + ((idxsz.cx - idxnsz.cx) / 2), pos.cy, idxbuf, 5);
+		TextOutA(context, pos.cx + 1 + sclsz.cx + 1 + idxsz.cx + 1 + ((bsesz.cx - bsensz.cx) / 2), pos.cy, bsebuf, 4);
+	}
+
+	pos.cx = 10;
+	pos.cy += charSize.cy;
+
+	SCALE:
+	{
+		BYTE SIBSCL = inst->sib.bits.scaled;
+		BYTE buf[] = "SCALE = 00: 0";
+		buf[8] += (SIBSCL >> 1) & 1;
+		buf[9] += (SIBSCL >> 0) & 1;
+		buf[12] += (1 << SIBSCL);
+		TextOutA(context, pos.cx, pos.cy, (char *) buf, 13);
+	}
+
+	pos.cy += charSize.cy;
+
+	INDEX:
+	{
+		BYTE SIBIDX = inst->sib.bits.index;
+		BYTE buf[16] = "INDEX = 000: RAX";
+		long length = 11;
+		buf[8] += (SIBIDX >> 2) & 1;
+		buf[9] += (SIBIDX >> 1) & 1;
+		buf[10] += (SIBIDX >> 0) & 1;
+		if (SIBIDX != 4)
+		{
+			length += 2;
+			length += get_reg(SIBIDX | ((inst->rex.value & 2) << 2), (char *) (buf + length), 3);
+		}
+		TextOutA(context, pos.cx, pos.cy, (const char *) buf, length);
+	}
+
+	pos.cy += charSize.cy;
+
+	BASE:
+	{
+		BYTE SIBBSE = inst->sib.bits.base;
+		BYTE buf[29] = "BSAE = 000: Displacement only";
+		long length = 29;
+		buf[7] += (SIBBSE >> 2) & 1;
+		buf[8] += (SIBBSE >> 1) & 1;
+		buf[9] += (SIBBSE >> 0) & 1;
+		if (inst->modrm.bits.mod || SIBBSE != 5)
+		{
+			length = 12;
+			length += get_reg(SIBBSE | ((inst->rex.value & 1) << 3), (char *) (buf + length), 3);
+		}
+		TextOutA(context, pos.cx, pos.cy, (const char *) buf, length);
+	}
+
+
 	SelectObject(context, font);
 }
