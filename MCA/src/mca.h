@@ -520,12 +520,6 @@ static BYTE imm_byte_3b_3A[256] = {
 	/* F0 */ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-typedef struct opcode
-{
-	const char *name;
-	QWORD length;
-} opcode;
-
 MCAAPI extern const char opcode_table[][16];
 MCAAPI extern const BYTE opcode_ext_r_m_table[][8];
 MCAAPI extern const BYTE opcode_ext_reg_table[][8];
@@ -561,15 +555,16 @@ enum prefixes
 
 enum instruction_feature
 {
-	PREFIX = 1,
-	ESCAPE = 2, // 0x0F
-	MODRM = 16,
-	SIB = 32,
-	REX = 64,
-	DISP = 128,
-	IMM = 512,
-	FPU = 1024,
-	VEX = 2048
+	PREFIX = 0x0001,
+	ESCAPE = 0x0002, // 0x0F
+	OPEXT  = 0x0004,
+	MODRM  = 0x0010,
+	SIB    = 0x0020,
+	REX    = 0x0040,
+	DISP   = 0x0080,
+	IMM    = 0x0200,
+	FPU    = 0x0400,
+	VEX    = 0x0800
 };
 
 /*
@@ -642,6 +637,12 @@ enum optype
 
 };
 
+typedef struct _instruct_symbol
+{
+	char name[16];
+	BYTE length;
+} instruct_symbol;
+
 struct instruction
 {
 	QWORD disp;
@@ -707,6 +708,10 @@ struct instruction
 
 	BYTE vex_cnt;
 	BYTE prefix_cnt;
+
+	instruct_symbol symbol;
+
+	DWORD operand;
 };
 
 
@@ -722,8 +727,9 @@ MCAAPI int mca_decode_2b(struct instruction *instr, enum supported_architecture 
 MCAAPI int mca_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data);
 MCAAPI void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, BYTE vex_size);
 MCAAPI int find_legacy_prefix(struct instruction *, BYTE);
-MCAAPI opcode find_opcode_extension(struct instruction *);
-MCAAPI opcode find_opcode(struct instruction *);
+MCAAPI void find_opcode_extension(struct instruction *);
+MCAAPI void find_opcode_prefix(struct instruction *);
+MCAAPI void find_opcode(struct instruction *);
 MCAAPI int get_reg(BYTE, char *, BYTE);
 
 #endif //MCA_H

@@ -228,8 +228,6 @@ int WinMain(void *ists, void *prv, char *cmd, int show)
 	return 0;
 }
 
-#ifndef CMAKE_BUILD
-
 #include "kernel32f.h"
 #include "ShowWindowFlag.h"
 
@@ -244,5 +242,3 @@ void mainCRTStartup(void)
 {
 	WinMainCRTStartup();
 }
-
-#endif

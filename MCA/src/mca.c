@@ -235,13 +235,6 @@ const char registers[16][4] = {
 */
 const BYTE operand_type[][256] = {
 	{
-		2, 2, 2, 2, 3, 3, 0, 0, 2, 2, 2, 2, 3, 3, 0, 0,
-		2, 2, 2, 2, 3, 3, 0, 0, 2, 2, 2, 2, 3, 3, 0, 0,
-		2, 2, 2, 2, 3, 3, 0, 0, 2, 2, 2, 2, 3, 3, 0, 0,
-		2, 2, 2, 2, 3, 3, 0, 0, 2, 2, 2, 2, 3, 3, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 2, 0, 0, 0, 0,
 	}
 };
 
@@ -564,9 +557,8 @@ int find_legacy_prefix(struct instruction *inst, BYTE pfx)
 	}
 	return 0;
 }
-opcode find_opcode_extension(struct instruction *inst)
+void find_opcode_extension(struct instruction *inst)
 {
-	opcode ret = {0, 0};
 	BYTE extoff[] = {0x4B, 0x95, 0xA0};
 	BYTE typ = inst->op_len - 1;
 	typ += ((inst->op_len == 3) && (inst->op[1] == 0x3A));
@@ -607,13 +599,13 @@ opcode find_opcode_extension(struct instruction *inst)
 		if (idx)
 		{
 			idx--;
-			ret.name = opcode_table[0x252 + idx];
-			ret.length = strlen(ret.name);
+			const char *name = opcode_table[0x252 + idx];
+			inst->symbol.length = strlen(name);
+			memcpy(inst->symbol.name, name, inst->symbol.length);
 		}
 	}
-	return ret;
 }
-opcode find_opcode_prefix(struct instruction *inst)
+void find_opcode_prefix(struct instruction *inst)
 {
 	/*
 	* L  F E D C B A 9 8 7 6 5 4 3 2 1 0
@@ -629,7 +621,7 @@ opcode find_opcode_prefix(struct instruction *inst)
 	WORD filters[2][3] = {{0xF0E2, 0x70E2, 0xF0A2},{0xE0E6, 0x08E6, 0x00A6}};
 	BYTE idx = 0;
 	BYTE opc = 0;
-	opcode ret = {0, 0};
+	const char *name = 0;
 	WORD ooff = 0;
 	if (inst->op_len == 2 || (inst->op_len == 3 && inst->op[1] == 0x38))
 	{
@@ -644,7 +636,7 @@ opcode find_opcode_prefix(struct instruction *inst)
 				BYTE off = 0;
 				BYTE pfx[] = {0x66, 0xF3, 0xF2};
 				WORD *filter = filters[(opc >> 3) & 1];
-				for (WORD i = 0; i < 3 && !ret.name; i++)
+				for (WORD i = 0; i < 3; i++)
 				{
 					off += (filter[i] >> (opc >> 4)) & 1;
 					if (find_legacy_prefix(inst, pfx[i]))
@@ -701,21 +693,23 @@ opcode find_opcode_prefix(struct instruction *inst)
 		idx = opcode_pfx_table[idx][opc & 7];
 		if (idx)
 		{
-			ret.name = opcode_table[ooff + idx - 1];
+			name = opcode_table[ooff + idx - 1];
 		}
 	}
-	if (ret.name)
-		ret.length = strlen(ret.name);
-	return ret;
-}
-opcode find_opcode(struct instruction *inst)
-{
-	opcode ret = find_opcode_extension(inst);
-	if (!ret.name)
+	if (name)
 	{
-		ret = find_opcode_prefix(inst);
+		inst->symbol.length = strlen(name);
+		memcpy(inst->symbol.name, name, inst->symbol.length);
 	}
-	if (!ret.name)
+}
+void find_opcode(struct instruction *inst)
+{
+	find_opcode_extension(inst);
+	if (!inst->symbol.length)
+	{
+		find_opcode_prefix(inst);
+	}
+	if (!inst->symbol.length)
 	{
 		WORD off[] = {0x0, 0x4B, 0x9D, 0xFA};
 		WORD bnd[] = {0x4B, 0x52, 0x5D, 0x29};
@@ -725,13 +719,13 @@ opcode find_opcode(struct instruction *inst)
 		BYTE idx = opcode_map[typ][opc];
 		if (idx && idx <= bnd[typ])
 		{
-			ret.name = opcode_table[idx + off[typ] - 1];
+			const char *name = opcode_table[idx + off[typ] - 1];
 			if (typ == 3 && opc == 0x0F && !find_legacy_prefix(inst, 0x66))
-				ret.name++;
-			ret.length = strlen(ret.name);
+				name++;
+			inst->symbol.length = strlen(name);
+			memcpy(inst->symbol.name, name, inst->symbol.length);
 		}
 	}
-	return ret;
 }
 int get_reg(BYTE reg, char* buf, BYTE size)
 {

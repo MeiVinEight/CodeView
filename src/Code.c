@@ -1,3 +1,4 @@
+#include <allocate.h>
 #include "Code.h"
 #include "gdi32f.h"
 #include "CodeViewWindow.h"
@@ -172,7 +173,7 @@ void Code_update(Code *this)
 		this->children[this->count].code[0] = this->inst.sib.value;
 		this->children[this->count].length = 1;
 		this->children[this->count].color = 0x55FFFF;
-		this->children[this->count].unit = 0;
+		this->children[this->count].unit = CodeUnit_SIB;
 		this->count++;
 	}
 
