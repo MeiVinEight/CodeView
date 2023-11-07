@@ -56,8 +56,7 @@ void CodeUnit_DASM(CodeUnit *this, void *window, void *context)
 	{
 		memcpy(buf + idx, inst->symbol.name, inst->symbol.length);
 		idx += inst->symbol.length;
-		BYTE ot = operand_type[inst->op_len - 1][opcb];
-		if (ot)
+		if (inst->symbol.length)
 		{
 		}
 	}

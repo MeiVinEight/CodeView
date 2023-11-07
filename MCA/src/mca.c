@@ -227,16 +227,6 @@ const char registers[16][4] = {
 	"R14",
 	"R15",
 };
-/*
-* 0  NONE
-* 1  [FULL REG]
-* 2  [G(b/v)]|[E(b/v)]
-* 3  [AX], [I(b/v)]
-*/
-const BYTE operand_type[][256] = {
-	{
-	}
-};
 
 void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, BYTE vex_size)
 {
@@ -524,6 +514,7 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
 #ifdef _ENABLE_RAW_BYTES
 			memcpy(instr->instr, start_data, instr->length);
 #endif
+			find_opcode(instr);
 			return instr->length;
 		}
 
@@ -544,6 +535,7 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
 	memcpy(instr->instr, start_data, instr->length);
 #endif
 
+	find_opcode(instr);
 	return instr->length;
 }
 int find_legacy_prefix(struct instruction *inst, BYTE pfx)
@@ -559,10 +551,12 @@ int find_legacy_prefix(struct instruction *inst, BYTE pfx)
 }
 void find_opcode_extension(struct instruction *inst)
 {
+	QWORD operand = 0;
 	BYTE extoff[] = {0x4B, 0x95, 0xA0};
 	BYTE typ = inst->op_len - 1;
 	typ += ((inst->op_len == 3) && (inst->op[1] == 0x3A));
-	BYTE idx = opcode_map[typ][inst->op[typ]];
+	BYTE idx = opcode_map[typ][inst->op[typ]].name;
+	operand |= opcode_map[typ][inst->op[typ]].operand;
 	if (typ < 3 && idx > extoff[typ])
 	{
 		idx -= extoff[typ];
@@ -588,13 +582,17 @@ void find_opcode_extension(struct instruction *inst)
 		if (idx)
 		{
 			idx--;
-			idx = opcode_ext_reg_table[idx][inst->modrm.bits.reg];
+			const instruction_format *pFormat = &opcode_ext_reg_table[idx][inst->modrm.bits.reg];
+			operand |= pFormat->operand;
+			idx = pFormat->name;
 		}
 		if (idx > 0x66)
 		{
 			idx -= 0x66;
 			idx--;
-			idx = opcode_ext_r_m_table[idx][inst->modrm.bits.rm];
+			const instruction_format *format = &opcode_ext_r_m_table[idx][inst->modrm.bits.rm];
+			operand |= format->operand;
+			idx = format->name;
 		}
 		if (idx)
 		{
@@ -602,6 +600,7 @@ void find_opcode_extension(struct instruction *inst)
 			const char *name = opcode_table[0x252 + idx];
 			inst->symbol.length = strlen(name);
 			memcpy(inst->symbol.name, name, inst->symbol.length);
+			inst->operand = operand;
 		}
 	}
 }
@@ -628,9 +627,9 @@ void find_opcode_prefix(struct instruction *inst)
 		if (inst->op_len == 2)
 		{
 			opc = inst->op[1];
-			idx = opcode_map[1][opc];
-			if (idx > 0x52)
+			if (opcode_map[1][opc].name > 0x52)
 			{
+				idx = opcode_map[1][opc].name;
 				ooff = 0x123;
 				idx -= 0x52;
 				BYTE off = 0;
@@ -660,13 +659,13 @@ void find_opcode_prefix(struct instruction *inst)
 			opc = inst->op[2];
 			if (((opc >> 4) == 0) || ((opc >> 3) == 3))
 			{
-				idx = opcode_map[2][opc];
+				idx = opcode_map[2][opc].name;
 				idx -= 0x5D;
 				idx += find_legacy_prefix(inst, 0x66);
 			}
 			else if ((opc >> 3) == 0x1E && opc != 0xF3)
 			{
-				idx = opcode_map[2][opc];
+				idx = opcode_map[2][opc].name;
 				idx -= 0x5D;
 				if (find_legacy_prefix(inst, 0x66))
 				{
@@ -687,10 +686,13 @@ void find_opcode_prefix(struct instruction *inst)
 			}
 		}
 	}
+	QWORD operand = 0;
 	if (idx)
 	{
 		idx--;
-		idx = opcode_pfx_table[idx][opc & 7];
+		const instruction_format *format = &opcode_pfx_table[idx][opc & 7];
+		idx = format->name;
+		operand = format->operand;
 		if (idx)
 		{
 			name = opcode_table[ooff + idx - 1];
@@ -700,6 +702,7 @@ void find_opcode_prefix(struct instruction *inst)
 	{
 		inst->symbol.length = strlen(name);
 		memcpy(inst->symbol.name, name, inst->symbol.length);
+		inst->operand = operand;
 	}
 }
 void find_opcode(struct instruction *inst)
@@ -716,7 +719,9 @@ void find_opcode(struct instruction *inst)
 		BYTE typ = inst->op_len - 1;
 		BYTE opc = inst->op[typ];
 		typ += (typ == 2) && (inst->op[1] == 0x3A);
-		BYTE idx = opcode_map[typ][opc];
+		const instruction_format *format = &opcode_map[typ][opc];
+		BYTE idx = format->name;
+		QWORD operand = format->operand;
 		if (idx && idx <= bnd[typ])
 		{
 			const char *name = opcode_table[idx + off[typ] - 1];
@@ -724,6 +729,7 @@ void find_opcode(struct instruction *inst)
 				name++;
 			inst->symbol.length = strlen(name);
 			memcpy(inst->symbol.name, name, inst->symbol.length);
+			inst->operand = operand;
 		}
 	}
 }

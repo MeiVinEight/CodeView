@@ -520,16 +520,30 @@ static BYTE imm_byte_3b_3A[256] = {
 	/* F0 */ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
+/**
+* Addressing Method
+* 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12 13 14 15 16
+* I  L  A  B  C  D  E  F  G  H  J  M  N  O  P  Q  R  S  U  V  W  X  Y
+*
+* Operand Type
+* 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12 13
+* a  b  c  d  dq p  pd pi ps q  qq s  sd ss si v  w  x  y  z
+*/
+typedef struct _instruction_format
+{
+	BYTE name;
+	DWORD operand;
+} instruction_format;
+
 MCAAPI extern const char opcode_table[][16];
-MCAAPI extern const BYTE opcode_ext_r_m_table[][8];
-MCAAPI extern const BYTE opcode_ext_reg_table[][8];
+MCAAPI extern const instruction_format opcode_ext_r_m_table[][8];
+MCAAPI extern const instruction_format opcode_ext_reg_table[][8];
 MCAAPI extern const BYTE opcode_ext_pfx_table[][3];
 MCAAPI extern const BYTE opcode_ext_mod_table[][2];
 MCAAPI extern const BYTE opcode_ext_grp_table[];
-MCAAPI extern const BYTE opcode_pfx_table[][8];
-MCAAPI extern const BYTE opcode_map[][256];
+MCAAPI extern const instruction_format opcode_pfx_table[][8];
+MCAAPI extern const instruction_format opcode_map[][256];
 MCAAPI extern const char registers[16][4];
-MCAAPI extern const BYTE operand_type[][256];
 
 enum jmp_type
 {
@@ -711,7 +725,7 @@ struct instruction
 
 	instruct_symbol symbol;
 
-	DWORD operand;
+	QWORD operand;
 };
 
 
