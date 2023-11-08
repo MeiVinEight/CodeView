@@ -50,7 +50,7 @@ void CodeUnit_DASM(CodeUnit *this, void *window, void *context)
 	BYTE opcb = inst->op[inst->op_len - 1];
 	void *font = SelectObject(context, this->codeFont);
 
-	char buf[33] = {0};
+	char buf[128] = {0};
 	DWORD idx = 0;
 	if (inst->symbol.length)
 	{
@@ -58,6 +58,8 @@ void CodeUnit_DASM(CodeUnit *this, void *window, void *context)
 		idx += inst->symbol.length;
 		if (inst->symbol.length)
 		{
+			buf[idx++] = ' ';
+			idx += disasm(buf + idx, 128 - idx, inst);
 		}
 	}
 	SIZE textSize = {0, 0};

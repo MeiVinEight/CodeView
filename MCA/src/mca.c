@@ -207,8 +207,300 @@
 void* memcpy(void*, const void*, unsigned long long);
 void* memset(void*, int, unsigned long long);
 
-static BYTE *imm_table[4] = {0, imm_byte_2b, imm_byte_3b_38, imm_byte_3b_3A};
-static BYTE *modrm_table[4] = {0, modrm_2b, modreg_3b_38, modreg_3b_3A};
+
+
+#define ALL (X86 | X64)
+
+//
+// instruction prefix look-up table
+BYTE x86_64_prefix[256] = {
+	//       00  01  02  03  04  05  06  07  08  09  0A  0B  0C  0D  0E  0F
+	/* 00 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL,
+	/* 10 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 20 */ 0, 0, 0, 0, 0, 0, ALL, 0, 0, 0, 0, 0, 0, 0, ALL, 0,
+	/* 30 */ 0, 0, 0, 0, 0, 0, ALL, 0, 0, 0, 0, 0, 0, 0, ALL, 0,
+	/* 40 */ X64, X64, X64, X64, X64, X64, X64, X64, X64, X64, X64, X64, X64, X64, X64, X64, // REX prefixes
+	/* 50 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 60 */ 0, 0, 0, 0, ALL, ALL, ALL, ALL, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 70 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 80 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 90 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* A0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* B0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* C0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* D0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* E0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* F0 */ ALL, 0, ALL, ALL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+//
+// 1-byte lookup table
+//
+#define X87_FPU  2
+
+BYTE modrm_1b[256] = {
+	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+	/* 00 */ 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0,
+	/* 10 */ 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0,
+	/* 20 */ 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0,
+	/* 30 */ 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0,
+	/* 40 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 50 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 60 */ 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0,
+	/* 70 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 80 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	/* 90 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* A0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* B0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* C0 */ 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* D0 */ 1, 1, 1, 1, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, // 2 = Coprocessor Escape
+	/* E0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* F0 */ 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1
+};
+
+#define   b   1 // byte
+#define   v   2 // word, dword or qword (64bit mode), depending on OS attribute
+#define   z   3 // word for 16bit OS or dword for 32/64-bit OS
+#define   p   4 // 32-bit, 48-bit, or 80-bit pointer, depending on operand-size attribute
+#define   z1  6 // word for 16bit OS or dword for 32/64-bit OS
+#define   w   7 // word
+#define   wb  8 // word, byte
+#define   gr3b  9 // byte (imm exists only if mod.reg == 0)
+#define   gr3z  10 // word, dword depending on OS (imm exists only if mod.reg == 0)
+
+BYTE imm_byte_1b[256] = {
+	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+	/* 00 */ 0, 0, 0, 0, b, z, 0, 0, 0, 0, 0, 0, b, z, 0, 0,
+	/* 10 */ 0, 0, 0, 0, b, z, 0, 0, 0, 0, 0, 0, b, z, 0, 0,
+	/* 20 */ 0, 0, 0, 0, b, z, 0, 0, 0, 0, 0, 0, b, z, 0, 0,
+	/* 30 */ 0, 0, 0, 0, b, z, 0, 0, 0, 0, 0, 0, b, z, 0, 0,
+	/* 40 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 50 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 60 */ 0, 0, 0, 0, 0, 0, 0, 0, z, z, b, b, 0, 0, 0, 0,
+	/* 70 */ b, b, b, b, b, b, b, b, b, b, b, b, b, b, b, b,
+	/* 80 */ b, z, b, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 90 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, p, 0, 0, 0, 0, 0,
+	/* A0 */ z1, z1, z1, z1, 0, 0, 0, 0, b, z, 0, 0, 0, 0, 0, 0,
+	/* B0 */ b, b, b, b, b, b, b, b, v, v, v, v, v, v, v, v,
+	/* C0 */ b, b, w, 0, 0, 0, b, z, wb, 0, w, 0, 0, b, 0, 0,
+	/* D0 */ 0, 0, 0, 0, b, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* E0 */ b, b, b, b, b, b, b, b, z, z, p, b, 0, 0, 0, 0,
+	/* F0 */ 0, 0, 0, 0, 0, 0, gr3b, gr3z, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+/*
+ * first byte:
+ *   - 1: 1-byte
+ *   - 2: 4-byte
+ *
+ * second byte (LSB):
+ *   - 1: Jcc
+ *   - 2: JMP
+ *
+ */
+#define j1  0x12
+#define j2  0x22
+#define jc1 0x11
+#define jc2 0x21
+
+// check if the OP is Jcc or JMP
+BYTE op1b_labels[256] = {
+	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+	/* 00 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 10 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 20 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 30 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 40 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 50 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 60 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 70 */ jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1,
+	/* 80 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 90 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* A0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* B0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* C0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* D0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* E0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, j2, 0, j1, 0, 0, 0, 0,
+	/* F0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+//
+// 2-byte OP look-up table
+
+// 0x0f
+#define  OE   0x01
+// 0x66 0x0f
+#define  O66  0x02
+// 0xf2 0x0f
+#define  OF2  0x04
+// 0xf3 0x0f
+#define  OF3  0x08
+
+#define  P1   (OE)
+#define  P2   (O66 | OE)
+#define  P4   (OF3 | OE)
+#define  P5   (O66 | OF2)
+#define  P6   (OE  | O66 | OF3)
+#define  P7   (OE  | O66 | OF2 | OF3)
+#define  P8   (O66 | OF2 | OF3)
+
+BYTE modrm_2b[256] = {
+	//       00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+	/* 00 */ P1, P1, P1, P1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 10 */ P7, P7, P7, P2, P2, P2, P6, P2, P1, 0, 0, 0, 0, 0, 0, P1,
+	/* 20 */ P1, P1, P1, P1, 0, 0, 0, 0, P2, P2, P7, P2, P7, P7, P2, P2,
+	/* 30 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 40 */ P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1,
+	/* 50 */ P2, P7, P4, P4, P2, P2, P2, P2, P7, P7, P7, P6, P7, P7, P7, P7,
+	/* 60 */ P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, O66, O66, P2, P2,
+	/* 70 */ P7, P1, P1, P1, P2, P2, P2, P1, P1, P1, 0, 0, P5, P5, P6, P6,
+	/* 80 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 90 */ P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1,
+	/* A0 */ 0, 0, 0, P1, P1, P1, 0, 0, 0, 0, 0, P1, P1, P1, P1, P1,
+	/* B0 */ P1, P1, P1, P1, P1, P1, P1, P1, OF3, P1, P1, P1, P4, P4, P1, P1,
+	/* C0 */ P1, P1, P7, P1, P2, P2, P2, P1, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* D0 */ P5, P2, P2, P2, P2, P2, P8, P2, P2, P2, P2, P2, P2, P2, P2, P2,
+	/* E0 */ P2, P2, P2, P2, P2, P2, P8, P2, P2, P2, P2, P2, P2, P2, P2, P2,
+	/* F0 */ OF2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, 0
+};
+
+BYTE imm_byte_2b[256] = {
+	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+	/* 00 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 10 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 20 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 30 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 40 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 50 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 60 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 70 */ b, b, b, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 80 */ z, z, z, z, z, z, z, z, z, z, z, z, z, z, z, z,
+	/* 90 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* A0 */ 0, 0, 0, 0, b, 0, 0, 0, 0, 0, 0, 0, b, 0, 0, 0,
+	/* B0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, b, 0, 0, 0, 0, 0,
+	/* C0 */ 0, 0, b, 0, b, b, b, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* D0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* E0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* F0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+// check if the OP is Jcc or JMP
+BYTE op2b_labels[256] = {
+	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+	/* 00 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 10 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 20 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 30 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 40 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 50 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 60 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 70 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 80 */ jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2,
+	/* 90 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* A0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* B0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* C0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* D0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* E0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* F0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+//
+// 3-byte OP look-up table
+
+#define OP3 (OE | OF2 | O66)
+#define OP2 (OE | OF2 | OF3)
+#define OP4 (O66 | OF2 | OF3)
+
+//
+// 3-byte OP look-up table (0x38)
+BYTE modreg_3b_38[256] = {
+	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+	/* 00 */ P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, P2, O66, O66, O66, O66,
+	/* 10 */ O66, 0, 0, O66, O66, O66, O66, O66, 0, 0, 0, 0, O66, O66, O66, 0,
+	/* 20 */ O66, O66, O66, O66, O66, O66, 0, 0, O66, O66, O66, O66, O66, O66, O66, O66,
+	/* 30 */ O66, O66, O66, O66, O66, O66, O66, O66, O66, O66, O66, O66, O66, O66, O66, O66,
+	/* 40 */ O66, O66, 0, 0, 0, O66, O66, O66, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 50 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 60 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 70 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 80 */ O66, O66, O66, 0, 0, 0, 0, 0, 0, 0, 0, 0, O66, 0, O66, 0,
+	/* 90 */ O66, O66, O66, O66, 0, 0, O66, O66, O66, O66, O66, O66, O66, O66, O66, O66,
+	/* A0 */ 0, 0, 0, 0, 0, 0, O66, O66, O66, O66, O66, O66, O66, O66, O66, O66,
+	/* B0 */ 0, 0, 0, 0, 0, 0, O66, O66, O66, O66, O66, O66, O66, O66, O66, O66,
+	/* C0 */ 0, 0, 0, 0, 0, 0, 0, 0, O66, O66, O66, O66, O66, O66, O66, O66,
+	/* D0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, O66, O66, O66, O66, O66,
+	/* E0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, O66, O66, O66, O66, O66,
+	/* F0 */ OP3, OP3, OE, 0, 0, OP2, OP4, P7, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+BYTE imm_byte_3b_38[256] = {
+	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+	/* 00 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 10 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 20 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 30 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 40 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 50 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 60 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 70 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 80 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 90 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* A0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* B0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* C0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* D0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* E0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* F0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+#define OP5 (OE | O66)
+
+//
+// 3-byte OP look-up table (0x3A)
+
+BYTE modreg_3b_3A[256] = {
+	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+	/* 00 */ O66, O66, O66, 0, O66, O66, O66, 0, O66, O66, O66, O66, O66, O66, O66, OP5,
+	/* 10 */ 0, 0, 0, 0, O66, O66, O66, O66, O66, O66, 0, 0, 0, O66, 0, 0,
+	/* 20 */ O66, O66, O66, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 30 */ 0, 0, 0, 0, 0, 0, 0, 0, O66, O66, 0, 0, 0, 0, 0, 0,
+	/* 40 */ O66, O66, O66, 0, O66, 0, O66, 0, 0, 0, O66, O66, O66, 0, 0, 0,
+	/* 50 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 60 */ O66, O66, O66, O66, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 70 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 80 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 90 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* A0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* B0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* C0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, O66, 0, 0, 0,
+	/* D0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, O66,
+	/* E0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* F0 */ OF2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+BYTE imm_byte_3b_3A[256] = {
+	//      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+	/* 00 */ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+	/* 10 */ 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0,
+	/* 20 */ 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 30 */ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0,
+	/* 40 */ 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0,
+	/* 50 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 60 */ 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 70 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 80 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 90 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* A0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* B0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* C0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+	/* D0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+	/* E0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* F0 */ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+BYTE *imm_table[4] = {0, imm_byte_2b, imm_byte_3b_38, imm_byte_3b_3A};
+BYTE *modrm_table[4] = {0, modrm_2b, modreg_3b_38, modreg_3b_3A};
 const char registers[16][4] = {
 	"RAX",
 	"RCX",
@@ -228,6 +520,27 @@ const char registers[16][4] = {
 	"R15",
 };
 
+DWORD copy(char *buf, const char *src, DWORD ava, DWORD len)
+{
+	if (len > ava)
+	{
+		len = ava;
+	}
+	memcpy(buf, src, len);
+	return len;
+}
+DWORD displacement(char *buf, struct instruction *inst, BYTE size)
+{
+	DWORD width = 2 * size;
+	memset(buf, '0', width);
+	DWORD displacement = inst->disp;
+	for (QWORD i = 0; i < 8; i++)
+	{
+		buf[width - 1 - i] = "0123456789ABCDEF"[displacement & 0xF];
+		displacement >>= 4;
+	}
+	return width;
+}
 void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, BYTE vex_size)
 {
 	memcpy(instr->vex, (data + instr->length), vex_size);
@@ -601,6 +914,7 @@ void find_opcode_extension(struct instruction *inst)
 			inst->symbol.length = strlen(name);
 			memcpy(inst->symbol.name, name, inst->symbol.length);
 			inst->operand = operand;
+			inst->set_field |= OPEXT;
 		}
 	}
 }
@@ -736,7 +1050,7 @@ void find_opcode(struct instruction *inst)
 int get_reg(BYTE reg, char* buf, BYTE size)
 {
 	char namebuf[4];
-	char* name = namebuf;
+	BYTE* name = (BYTE *) namebuf;
 	int len = 3;
 	if (reg == 8 || reg == 9)
 		len = 2;
@@ -746,12 +1060,18 @@ int get_reg(BYTE reg, char* buf, BYTE size)
 		case 0:
 		case 1:
 		{
+			WORD suf = 0x5742; // "BW"
 			if (reg > 7)
-				name[len++] = (size == 0) ? 'B' : 'W';
+				name[len++] = ((BYTE *) &suf)[size];
 			if (reg < 8)
 			{
 				if (size == 0)
-					name[len - 1] = 'L';
+				{
+					WORD a = 0x484C; // "LH"
+					DWORD x = 0x42444341; // "ACDB"
+					name[2] = ((BYTE *) &a)[reg >> 2];
+					name[1] = ((BYTE *) &x)[reg & 3];
+				}
 				name++;
 				len--;
 			}
@@ -769,4 +1089,122 @@ int get_reg(BYTE reg, char* buf, BYTE size)
 
 	memcpy(buf, name, len);
 	return len;
+}
+DWORD disasm_operand(char *dst, QWORD size, struct instruction *inst, WORD operand)
+{
+	char buf[128];
+	BYTE operandSize = 2;
+	BYTE addressSize = 3;
+
+	// override operand-size attribute
+	if (find_legacy_prefix(inst, 0x66))
+		operandSize = 1;
+	if (inst->rex.bits.rex_w)
+		operandSize = 3;
+
+	// override address-size attribute
+	if (find_legacy_prefix(inst, 0x67))
+		addressSize = 2;
+
+	DWORD retVal = 0;
+	if (operand < 460)
+	{
+		WORD AM = operand / 20;
+		WORD OT = operand % 20;
+		if (OT == 0x01) // b
+			operandSize = 0;
+		switch (AM)
+		{
+			case 0x06: // E
+			{
+				BYTE rm = inst->modrm.bits.rm;
+				if ((inst->modrm.value >> 6) == 3)
+				{
+					retVal += get_reg(rm, buf + retVal, operandSize);
+				}
+				else
+				{
+					const char *sizePrefix = "DWORD PTR[";
+					DWORD len = 10;
+					if (operandSize < 2)
+					{
+						len--;
+						sizePrefix++;
+					}
+					memcpy(buf + retVal, sizePrefix, len);
+					if (!operandSize) memcpy(buf + retVal, "BYTE", 4);
+					if (operandSize == 3) buf[retVal] = 'Q';
+					retVal += len;
+
+					if (rm == 4)
+					{
+						// SIB with no displacement
+						if (!((inst->sib.bits.base == 5) && (inst->modrm.bits.mod == 0)))
+						{
+							retVal += get_reg(inst->sib.bits.base | ((inst->rex.value & 1) << 3), buf + retVal, addressSize);
+							buf[retVal++] = '+';
+						}
+						BYTE scaled = 1 << inst->sib.bits.scaled;
+						retVal += get_reg(inst->sib.bits.index | ((inst->rex.value & 2) << 2), buf + retVal, addressSize);
+						buf[retVal++] = '*';
+						buf[retVal++] = (char) ('0' + scaled);
+						BYTE disSize = mca_displacement_size(inst->modrm.bits.mod, inst->sib.bits.base);
+						if (disSize)
+						{
+							buf[retVal++] = '+';
+							retVal += displacement(buf + retVal, inst, disSize);
+						}
+					}
+					else if ((!inst->modrm.value >> 6) && (rm == 5))
+					{
+						// Displacement only
+						retVal += displacement(buf + retVal, inst, 4);
+					}
+					else
+					{
+						retVal += get_reg(rm | ((inst->rex.value & 1) << 3), buf + retVal, addressSize);
+					}
+
+					buf[retVal++] = ']';
+				}
+				break;
+			}
+			case 0x08: // G
+			{
+				retVal += get_reg(inst->modrm.bits.reg | ((inst->rex.value & 4) << 1), buf, operandSize);
+				break;
+			}
+		}
+	}
+	else
+	{
+		if (inst->op_len == 1)
+		{
+			if (inst->op[0] >> 4 == 5)
+			{
+			}
+		}
+	}
+	return copy(dst, buf, size, retVal);
+}
+DWORD disasm(char *dst, QWORD size, struct instruction *inst)
+{
+	QWORD operand = inst->operand;
+	char buf[128];
+	DWORD retVal = 0;
+	while (operand)
+	{
+		if (retVal)
+		{
+			buf[retVal++] = ',';
+			buf[retVal++] = ' ';
+		}
+		QWORD op = operand & 511;
+		if (op)
+		{
+			retVal += disasm_operand((buf + retVal), 128 - retVal, inst, op - 1);
+		}
+		operand >>= 9;
+	}
+	return copy(dst, buf, size, retVal);
 }
