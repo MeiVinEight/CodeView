@@ -153,11 +153,14 @@ void Code_update(Code *this)
 		this->count++;
 	}
 
-	memcpy(this->children[this->count].code, this->inst.op, this->inst.op_len);
-	this->children[this->count].length = this->inst.op_len;
-	this->children[this->count].color = 0x55FF55;
-	this->children[this->count].unit = 0;
-	this->count++;
+	if (this->inst.op_len)
+	{
+		memcpy(this->children[this->count].code, this->inst.op, this->inst.op_len);
+		this->children[this->count].length = this->inst.op_len;
+		this->children[this->count].color = 0x55FF55;
+		this->children[this->count].unit = 0;
+		this->count++;
+	}
 
 	if (this->inst.set_field & MODRM)
 	{
@@ -188,7 +191,7 @@ void Code_update(Code *this)
 
 	if (this->inst.set_field & IMM)
 	{
-		if (this->inst.op[0] == 0xC8) // ENTER Iw, Ib
+		if (this->inst.type == 0 && this->inst.op[0] == 0xC8) // ENTER Iw, Ib
 		{
 			memcpy(this->children[this->count].code, &this->inst.imm, 2);
 			this->children[this->count].length = 2;

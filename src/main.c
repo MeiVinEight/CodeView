@@ -9,6 +9,7 @@
 #include "CodeViewWindow.h"
 #include "CodeUnit.h"
 
+// compiler will place this variable at the base of the image file
 extern unsigned short __ImageBase;
 
 typedef struct ListNode
@@ -40,6 +41,7 @@ void FreeList(ListNode **list, void (*data)(void *))
 	}
 	*list = 0;
 }
+// Win32 message routine
 long long __stdcall WindowProc(void *hwnd, unsigned int uMSG, unsigned long long wParam, long long lParam)
 {
 	switch (uMSG)
@@ -231,6 +233,7 @@ int WinMain(void *ists, void *prv, char *cmd, int show)
 #include "kernel32f.h"
 #include "ShowWindowFlag.h"
 
+// Entry of SUBSYSTEM:WINDOWS
 void WinMainCRTStartup(void)
 {
 	STARTUPINFOW si = {0};
@@ -238,6 +241,7 @@ void WinMainCRTStartup(void)
 	unsigned short show = si.dwFlags & 0x00000001 ? si.wShowWindow : SW_SHOWDEFAULT;
 	WinMain(&__ImageBase, 0, 0, show);
 }
+// Entry of SUBSYSTEM:CONSOLE
 void mainCRTStartup(void)
 {
 	WinMainCRTStartup();

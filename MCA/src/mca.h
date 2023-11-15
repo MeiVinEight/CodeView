@@ -272,6 +272,7 @@ MCAAPI extern const BYTE opcode_ext_grp_table[];
 MCAAPI extern const instruction_format opcode_pfx_table[][8];
 MCAAPI extern const instruction_format opcode_map[][256];
 MCAAPI extern const char registers[16][4];
+MCAAPI extern const char segment_register[6];
 
 enum jmp_type
 {
@@ -291,8 +292,9 @@ enum prefixes
 	GS = 32, // 0x65
 	OS = 64, // 0x66
 	AS = 128,// 0x67
-	REPNE = 256,
-	REPE = 512,
+	LOCK = 256,
+	REPNE = 512,
+	REPE = 1024,
 };
 
 enum instruction_feature
@@ -300,6 +302,7 @@ enum instruction_feature
 	PREFIX = 0x0001,
 	ESCAPE = 0x0002, // 0x0F
 	OPEXT  = 0x0004,
+	SEGSLT = 0x0008,
 	MODRM  = 0x0010,
 	SIB    = 0x0020,
 	REX    = 0x0040,
@@ -400,6 +403,7 @@ struct instruction
 #endif
 
 	BYTE prefixes[4];
+	BYTE segment_selector;
 	enum optype type;
 	BYTE op[3];
 	BYTE op_len;

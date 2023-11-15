@@ -246,9 +246,9 @@ BYTE modrm_1b[256] = {
 	/* 30 */ 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0,
 	/* 40 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	/* 50 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	/* 60 */ 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0,
+	/* 60 */ 0, 0, 3, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0,
 	/* 70 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	/* 80 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	/* 80 */ 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	/* 90 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	/* A0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	/* B0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -278,13 +278,13 @@ BYTE imm_byte_1b[256] = {
 	/* 50 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	/* 60 */ 0, 0, 0, 0, 0, 0, 0, 0, z, z, b, b, 0, 0, 0, 0,
 	/* 70 */ b, b, b, b, b, b, b, b, b, b, b, b, b, b, b, b,
-	/* 80 */ b, z, b, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	/* 90 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, p, 0, 0, 0, 0, 0,
+	/* 80 */ b, z, b | 128, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 90 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, p | 128, 0, 0, 0, 0, 0,
 	/* A0 */ z1, z1, z1, z1, 0, 0, 0, 0, b, z, 0, 0, 0, 0, 0, 0,
 	/* B0 */ b, b, b, b, b, b, b, b, v, v, v, v, v, v, v, v,
 	/* C0 */ b, b, w, 0, 0, 0, b, z, wb, 0, w, 0, 0, b, 0, 0,
-	/* D0 */ 0, 0, 0, 0, b, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	/* E0 */ b, b, b, b, b, b, b, b, z, z, p, b, 0, 0, 0, 0,
+	/* D0 */ 0, 0, 0, 0, b | 128, b | 128, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* E0 */ b, b, b, b, b, b, b, b, z, z, p | 128, b, 0, 0, 0, 0,
 	/* F0 */ 0, 0, 0, 0, 0, 0, gr3b, gr3z, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
@@ -519,6 +519,7 @@ const char registers[16][4] = {
 	"R14",
 	"R15",
 };
+const char segment_register[6] = "ECSDFG";
 
 DWORD copy(char *buf, const char *src, DWORD ava, DWORD len)
 {
@@ -529,17 +530,35 @@ DWORD copy(char *buf, const char *src, DWORD ava, DWORD len)
 	memcpy(buf, src, len);
 	return len;
 }
-DWORD displacement(char *buf, struct instruction *inst, BYTE size)
+DWORD ptr(char *dst, QWORD bufSize, BYTE size)
+{
+	char buf[16];
+	const char *sizePrefix = "DWORD PTR";
+	DWORD len = 9;
+	if (size < 2)
+	{
+		len--;
+		sizePrefix++;
+	}
+	memcpy(buf, sizePrefix, len);
+	if (!size) memcpy(buf, "BYTE", 4);
+	if (size == 3) buf[0] = 'Q';
+	return copy(dst, buf, bufSize, len);
+}
+DWORD hexnum(char *buf, BYTE *src, BYTE size)
 {
 	DWORD width = 2 * size;
 	memset(buf, '0', width);
-	DWORD displacement = inst->disp;
-	for (QWORD i = 0; i < 8; i++)
+	for (QWORD i = 0; i < size; i++)
 	{
-		buf[width - 1 - i] = "0123456789ABCDEF"[displacement & 0xF];
-		displacement >>= 4;
+		buf[width - 1 - ((i << 1) + 0)] = "0123456789ABCDEF"[(src[i] >> 0) & 0xF];
+		buf[width - 1 - ((i << 1) + 1)] = "0123456789ABCDEF"[(src[i] >> 4) & 0xF];
 	}
 	return width;
+}
+DWORD displacement(char *buf, struct instruction *inst, BYTE size)
+{
+	return hexnum(buf, (BYTE *) &inst->disp, size);
 }
 void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, BYTE vex_size)
 {
@@ -559,6 +578,7 @@ void mca_vex_decode(struct instruction *instr, enum supported_architecture arch,
 		instr->_vex.val5 = instr->vex[1];
 #endif
 
+		instr->type = 1;
 		mca_decode_modrm(instr, arch, data, modrm_2b, imm_byte_2b, 0);
 	}
 	else if (instr->vex[0] == 0xC4)
@@ -569,8 +589,13 @@ void mca_vex_decode(struct instruction *instr, enum supported_architecture arch,
 		memcpy(&instr->_vex.val4, &instr->vex[1], 2);
 #endif
 
-		BYTE index = (BYTE) (instr->vex[1] & 0x3);
+		BYTE index = (BYTE) (instr->vex[1] & 0x1F);
 		instr->type = index;
+		if (index > 3 || index == 0)
+		{
+			instr->op_len = 0; // means #UD
+			return;
+		}
 		mca_decode_modrm(instr, arch, data, modrm_table[index], imm_table[index], 0);
 	}
 	// TODO  XOP, 0x8F
@@ -604,6 +629,8 @@ int mca_displacement_size(BYTE mod, BYTE rm)
 }
 int mca_imm_size(struct instruction *instr, QWORD val, enum supported_architecture arch)
 {
+	if (arch == X64 && val & 0x80)
+		return 0;
 	switch (val)
 	{
 		case b:
@@ -619,6 +646,8 @@ int mca_imm_size(struct instruction *instr, QWORD val, enum supported_architectu
 				return 2;
 			return 4;
 		case z1:
+			if (arch == X86 || instr->set_prefix & AS)
+				return 4;
 			return 8;
 		case p:
 			if (instr->set_prefix & OS)
@@ -651,8 +680,8 @@ int mca_imm_size(struct instruction *instr, QWORD val, enum supported_architectu
 }
 void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *start_data, const BYTE *modrmTable, const BYTE*immTable, const BYTE*jcc_table)
 {
-	QWORD val;
-	if ((val = modrmTable[instr->op[instr->op_len - 1]]))
+	QWORD val = modrmTable[instr->op[instr->op_len - 1]];
+	if (val && (arch != X64 || val != 3))
 	{
 		instr->set_field |= MODRM;
 
@@ -768,26 +797,38 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
 		{
 			case 0x26:
 				instr->prefixes[instr->prefix_cnt++] = curr;
+				instr->segment_selector = 0;
+				instr->set_field |= SEGSLT;
 				instr->set_prefix |= ES;
 				break;
 			case 0x2E:
 				instr->prefixes[instr->prefix_cnt++] = curr;
+				instr->segment_selector = 1;
+				instr->set_field |= SEGSLT;
 				instr->set_prefix |= CS;
 				break;
 			case 0x36:
 				instr->prefixes[instr->prefix_cnt++] = curr;
+				instr->segment_selector = 2;
+				instr->set_field |= SEGSLT;
 				instr->set_prefix |= SS;
 				break;
 			case 0x3E:
 				instr->prefixes[instr->prefix_cnt++] = curr;
+				instr->segment_selector = 3;
+				instr->set_field |= SEGSLT;
 				instr->set_prefix |= DS;
 				break;
 			case 0x64:
 				instr->prefixes[instr->prefix_cnt++] = curr;
+				instr->segment_selector = 4;
+				instr->set_field |= SEGSLT;
 				instr->set_prefix |= FS;
 				break;
 			case 0x65:
 				instr->prefixes[instr->prefix_cnt++] = curr;
+				instr->segment_selector = 5;
+				instr->set_field |= SEGSLT;
 				instr->set_prefix |= GS;
 				break;
 			case 0x66:
@@ -797,6 +838,10 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
 			case 0x67:
 				instr->prefixes[instr->prefix_cnt++] = curr;
 				instr->set_prefix |= AS;
+				break;
+			case 0xF0:
+				instr->prefixes[instr->prefix_cnt++] = curr;
+				instr->set_prefix |= LOCK;
 				break;
 			case 0xF2:
 				instr->prefixes[instr->prefix_cnt++] = curr;
@@ -841,6 +886,7 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
 	{
 		instr->length++;
 		instr->op[instr->op_len++] = curr;
+		instr->type = OP1B;
 		mca_decode_modrm(instr, arch, start_data, modrm_1b, imm_byte_1b, op1b_labels);
 	}
 
@@ -864,83 +910,94 @@ int find_legacy_prefix(struct instruction *inst, BYTE pfx)
 }
 void find_opcode_extension(struct instruction *inst)
 {
-	QWORD operand = 0;
-	BYTE extoff[] = {0x4B, 0x95, 0xA0};
-	BYTE typ = inst->op_len - 1;
-	typ += ((inst->op_len == 3) && (inst->op[1] == 0x3A));
-	BYTE idx = opcode_map[typ][inst->op[typ]].name;
-	operand |= opcode_map[typ][inst->op[typ]].operand;
-	if (typ < 3 && idx > extoff[typ])
+	if (inst->op_len)
 	{
-		idx -= extoff[typ];
-		idx--;
-		idx = opcode_ext_grp_table[idx];
-		if (idx > 30)
+		QWORD operand = 0;
+		BYTE extoff[] = {0x4B, 0x95, 0xA0};
+		BYTE typ = inst->type;
+		BYTE opc = inst->op[inst->op_len - 1];
+		BYTE idx = opcode_map[typ][opc].name;
+		operand |= opcode_map[typ][opc].operand;
+		if (typ < 3 && idx > extoff[typ])
 		{
-			idx -= 30;
+			idx -= extoff[typ];
 			idx--;
-			idx = opcode_ext_mod_table[idx][inst->modrm.bits.mod == 3];
-		}
-		if (idx > 27)
-		{
-			idx -= 27;
-			idx--;
-			if (find_legacy_prefix(inst, 0x66))
-				idx = opcode_ext_pfx_table[idx][1];
-			else if (find_legacy_prefix(inst, 0xF3))
-				idx = opcode_ext_pfx_table[idx][2];
-			else
-				idx = opcode_ext_pfx_table[idx][0];
-		}
-		if (idx)
-		{
-			idx--;
-			const instruction_format *pFormat = &opcode_ext_reg_table[idx][inst->modrm.bits.reg];
-			operand |= pFormat->operand;
-			idx = pFormat->name;
-		}
-		if (idx > 0x66)
-		{
-			idx -= 0x66;
-			idx--;
-			const instruction_format *format = &opcode_ext_r_m_table[idx][inst->modrm.bits.rm];
-			operand |= format->operand;
-			idx = format->name;
-		}
-		if (idx)
-		{
-			idx--;
-			const char *name = opcode_table[0x252 + idx];
-			inst->symbol.length = strlen(name);
-			memcpy(inst->symbol.name, name, inst->symbol.length);
-			inst->operand = operand;
-			inst->set_field |= OPEXT;
+			idx = opcode_ext_grp_table[idx];
+			if (idx > 30)
+			{
+				idx -= 30;
+				idx--;
+				idx = opcode_ext_mod_table[idx][inst->modrm.bits.mod == 3];
+			}
+			if (idx > 27)
+			{
+				idx -= 27;
+				idx--;
+				if (find_legacy_prefix(inst, 0x66))
+					idx = opcode_ext_pfx_table[idx][1];
+				else if (find_legacy_prefix(inst, 0xF3))
+					idx = opcode_ext_pfx_table[idx][2];
+				else
+					idx = opcode_ext_pfx_table[idx][0];
+			}
+			if (idx)
+			{
+				idx--;
+				const instruction_format *pFormat = &opcode_ext_reg_table[idx][inst->modrm.bits.reg];
+				if (!inst->modrm.bits.reg && opc == 0xF7)
+				{
+					operand |= 0x00002600;
+				}
+				else
+				{
+					operand |= pFormat->operand;
+				}
+				idx = pFormat->name;
+			}
+			if (idx > 0x66)
+			{
+				idx -= 0x66;
+				idx--;
+				const instruction_format *format = &opcode_ext_r_m_table[idx][inst->modrm.bits.rm];
+				operand |= format->operand;
+				idx = format->name;
+			}
+			if (idx)
+			{
+				idx--;
+				const char *name = opcode_table[0x252 + idx];
+				inst->symbol.length = strlen(name);
+				memcpy(inst->symbol.name, name, inst->symbol.length);
+				inst->operand = operand;
+				inst->set_field |= OPEXT;
+			}
 		}
 	}
 }
 void find_opcode_prefix(struct instruction *inst)
 {
-	/*
-	* L  F E D C B A 9 8 7 6 5 4 3 2 1 0
-	* 66 1 1 1 1 0 0 0 0 1 1 1 0 0 0 1 0 = F0E2
-	* F3 0 1 1 1 0 0 0 0 1 1 1 0 0 0 1 0 = 70E2
-	* F2 1 1 1 1 0 0 0 0 1 0 1 0 0 0 1 0 = F0A2
-	*
-	* R  F E D C B A 9 8 7 6 5 4 3 2 1 0
-	* 66 1 1 1 0 0 0 0 0 1 1 1 0 0 1 1 0 = E0E6
-	* F3 0 0 0 0 1 0 0 0 1 1 1 0 0 1 1 0 = 08E6
-	* F2 0 0 0 0 0 0 0 0 1 0 1 0 0 1 1 0 = 00A6
-	*/
-	WORD filters[2][3] = {{0xF0E2, 0x70E2, 0xF0A2},{0xE0E6, 0x08E6, 0x00A6}};
-	BYTE idx = 0;
-	BYTE opc = 0;
-	const char *name = 0;
-	WORD ooff = 0;
-	if (inst->op_len == 2 || (inst->op_len == 3 && inst->op[1] == 0x38))
+	if (inst->op_len)
 	{
-		if (inst->op_len == 2)
+		/*
+		* L  F E D C B A 9 8 7 6 5 4 3 2 1 0
+		* 66 1 1 1 1 0 0 0 0 1 1 1 0 0 0 1 0 = F0E2
+		* F3 0 1 1 1 0 0 0 0 1 1 1 0 0 0 1 0 = 70E2
+		* F2 1 1 1 1 0 0 0 0 1 0 1 0 0 0 1 0 = F0A2
+		*
+		* R  F E D C B A 9 8 7 6 5 4 3 2 1 0
+		* 66 1 1 1 0 0 0 0 0 1 1 1 0 0 1 1 0 = E0E6
+		* F3 0 0 0 0 1 0 0 0 1 1 1 0 0 1 1 0 = 08E6
+		* F2 0 0 0 0 0 0 0 0 1 0 1 0 0 1 1 0 = 00A6
+		*/
+		WORD filters[2][3] = {{0xF0E2, 0x70E2, 0xF0A2},
+							  {0xE0E6, 0x08E6, 0x00A6}};
+		BYTE idx = 0;
+		BYTE opc = 0;
+		const char *name = 0;
+		WORD ooff = 0;
+		if (inst->type == 1)
 		{
-			opc = inst->op[1];
+			opc = inst->op[inst->op_len - 1];
 			if (opcode_map[1][opc].name > 0x52)
 			{
 				idx = opcode_map[1][opc].name;
@@ -967,10 +1024,10 @@ void find_opcode_prefix(struct instruction *inst)
 				}
 			}
 		}
-		else
+		else if (inst->type == 2)
 		{
 			ooff = 0x220;
-			opc = inst->op[2];
+			opc = inst->op[inst->op_len - 1];
 			if (((opc >> 4) == 0) || ((opc >> 3) == 3))
 			{
 				idx = opcode_map[2][opc].name;
@@ -999,51 +1056,61 @@ void find_opcode_prefix(struct instruction *inst)
 				}
 			}
 		}
-	}
-	QWORD operand = 0;
-	if (idx)
-	{
-		idx--;
-		const instruction_format *format = &opcode_pfx_table[idx][opc & 7];
-		idx = format->name;
-		operand = format->operand;
+		QWORD operand = 0;
 		if (idx)
 		{
-			name = opcode_table[ooff + idx - 1];
+			idx--;
+			const instruction_format *format = &opcode_pfx_table[idx][opc & 7];
+			idx = format->name;
+			operand = format->operand;
+			if (idx)
+			{
+				name = opcode_table[ooff + idx - 1];
+			}
 		}
-	}
-	if (name)
-	{
-		inst->symbol.length = strlen(name);
-		memcpy(inst->symbol.name, name, inst->symbol.length);
-		inst->operand = operand;
+		if (name)
+		{
+			inst->symbol.length = strlen(name);
+			memcpy(inst->symbol.name, name, inst->symbol.length);
+			inst->operand = operand;
+		}
 	}
 }
 void find_opcode(struct instruction *inst)
 {
-	find_opcode_extension(inst);
-	if (!inst->symbol.length)
+	if (inst->op_len)
 	{
-		find_opcode_prefix(inst);
-	}
-	if (!inst->symbol.length)
-	{
-		WORD off[] = {0x0, 0x4B, 0x9D, 0xFA};
-		WORD bnd[] = {0x4B, 0x52, 0x5D, 0x29};
-		BYTE typ = inst->op_len - 1;
-		BYTE opc = inst->op[typ];
-		typ += (typ == 2) && (inst->op[1] == 0x3A);
-		const instruction_format *format = &opcode_map[typ][opc];
-		BYTE idx = format->name;
-		QWORD operand = format->operand;
-		if (idx && idx <= bnd[typ])
+		find_opcode_extension(inst);
+		if (!inst->symbol.length)
 		{
-			const char *name = opcode_table[idx + off[typ] - 1];
-			if (typ == 3 && opc == 0x0F && !find_legacy_prefix(inst, 0x66))
-				name++;
-			inst->symbol.length = strlen(name);
-			memcpy(inst->symbol.name, name, inst->symbol.length);
-			inst->operand = operand;
+			find_opcode_prefix(inst);
+		}
+		if (!inst->symbol.length)
+		{
+			WORD off[] = {0x0, 0x4B, 0x9D, 0xFA};
+			WORD bnd[] = {0x4B, 0x52, 0x5D, 0x29};
+			BYTE typ = inst->type;
+			BYTE opc = inst->op[inst->op_len - 1];
+			const instruction_format *format = &opcode_map[typ][opc];
+			BYTE idx = format->name;
+			QWORD operand = format->operand;
+			if (typ == 0)
+			{
+				if (opc == 0x90 && (inst->rex.bits.rex_w || inst->rex.bits.rex_b || find_legacy_prefix(inst, 0x66)))
+				{
+					idx = 0x20;
+					operand = 0x00039DCD;
+				}
+			}
+			if (idx && idx <= bnd[typ])
+			{
+				const char *name = opcode_table[idx + off[typ] - 1];
+				if (typ == 3 && opc == 0x0F && !find_legacy_prefix(inst, 0x66))
+					name++;
+				inst->symbol.length = strlen(name);
+				memcpy(inst->symbol.name, name, inst->symbol.length);
+				inst->operand = operand;
+			}
 		}
 	}
 }
@@ -1113,28 +1180,36 @@ DWORD disasm_operand(char *dst, QWORD size, struct instruction *inst, WORD opera
 		WORD OT = operand % 20;
 		if (OT == 0x01) // b
 			operandSize = 0;
+		else if (OT == 0x10) // w
+			operandSize = 1;
 		switch (AM)
 		{
+			case 0x00: // I
+			{
+				BYTE len = operandSize;
+				if (OT == 0x13 && operandSize == 3) // z
+					len = 2;
+				retVal += hexnum(buf + retVal, (BYTE *) &inst->imm, 1 << len);
+				break;
+			}
 			case 0x06: // E
+			case 0x0B: // M
 			{
 				BYTE rm = inst->modrm.bits.rm;
-				if ((inst->modrm.value >> 6) == 3)
+				if ((inst->modrm.value >> 6) == 3 && AM != 0x0B)
 				{
 					retVal += get_reg(rm, buf + retVal, operandSize);
 				}
 				else
 				{
-					const char *sizePrefix = "DWORD PTR[";
-					DWORD len = 10;
-					if (operandSize < 2)
+					retVal += ptr(buf + retVal, size - retVal, operandSize);
+					buf[retVal++] = '[';
+					if (inst->set_field & SEGSLT && inst->segment_selector < 6)
 					{
-						len--;
-						sizePrefix++;
+						buf[retVal++] = segment_register[inst->segment_selector];
+						buf[retVal++] = 'S';
+						buf[retVal++] = ':';
 					}
-					memcpy(buf + retVal, sizePrefix, len);
-					if (!operandSize) memcpy(buf + retVal, "BYTE", 4);
-					if (operandSize == 3) buf[retVal] = 'Q';
-					retVal += len;
 
 					if (rm == 4)
 					{
@@ -1163,6 +1238,12 @@ DWORD disasm_operand(char *dst, QWORD size, struct instruction *inst, WORD opera
 					else
 					{
 						retVal += get_reg(rm | ((inst->rex.value & 1) << 3), buf + retVal, addressSize);
+						BYTE mod = inst->modrm.value >> 6;
+						if (mod == 2 || mod == 1)
+						{
+							buf[retVal++] = '+';
+							retVal += hexnum(buf + retVal, (BYTE *) &inst->disp, inst->disp_len);
+						}
 					}
 
 					buf[retVal++] = ']';
@@ -1174,14 +1255,109 @@ DWORD disasm_operand(char *dst, QWORD size, struct instruction *inst, WORD opera
 				retVal += get_reg(inst->modrm.bits.reg | ((inst->rex.value & 4) << 1), buf, operandSize);
 				break;
 			}
+			case 0x0D: // O
+			{
+				retVal += ptr(buf + retVal, 128 - retVal, operandSize);
+				buf[retVal++] = '[';
+				retVal += hexnum(buf + retVal, (BYTE *) &inst->imm, 1 << addressSize);
+				buf[retVal++] = ']';
+				break;
+			}
+			case 0x11: // S
+			{
+				BYTE reg = inst->modrm.bits.reg;
+				if (reg < 6)
+				{
+					buf[retVal++] = segment_register[reg];
+					buf[retVal++] = 'S';
+				}
+				break;
+			}
+			case 0x15: // X
+			case 0x16: // Y
+			{
+				retVal += ptr(buf + retVal, 128 - retVal, operandSize);
+				buf[retVal++] = '[';
+				retVal += get_reg(6 + AM - 0x15, buf + retVal, addressSize);
+				buf[retVal++] = ']';
+				break;
+			}
 		}
 	}
 	else
 	{
-		if (inst->op_len == 1)
+		if (inst->type == 0)
 		{
-			if (inst->op[0] >> 4 == 5)
+			BYTE opc = inst->op[0];
+			if
+			(
+				(((opc >> 6) == 0) && ((opc & 14) == 4)) ||
+				((opc >> 2) == 0x28) ||
+				((opc >> 3) == 0x15) ||
+				((opc >> 2) == 0x39) ||
+				(((opc >> 2) == 0x3B) && (operand == 460 + ((opc & 2) >> 1))) ||
+				((opc >> 1) == 0x7B)
+			)
 			{
+				retVal += get_reg(0, buf, (opc & 1) ? operandSize : 0);
+			}
+			else if ((opc >> 4) == 5)
+			{
+				if (operandSize == 2)
+					operandSize = 3;
+				retVal += get_reg((opc & 0x7) | ((inst->rex.value & 1) << 3), buf, operandSize);
+			}
+			else if ((opc >> 2) == 0x1B)
+			{
+				if ((operand == 460 && !(opc & 2)) || (operand == 461 && opc & 2))
+				{
+					BYTE reg = 7; // RDI
+					reg -= (opc & 2) >> 1; // RSI
+					BYTE rs = 0;
+					if (opc & 1)
+					{
+						rs = operandSize == 1 ? operandSize : 2;
+					}
+					retVal += ptr(buf, size, rs);
+					buf[retVal++] = '[';
+					retVal += get_reg(reg, buf + retVal, addressSize);
+					buf[retVal++] = ']';
+				}
+				else
+				{
+					retVal += get_reg(2, buf, 1); // DX
+				}
+			}
+			else if ((opc >> 3) == 0x12)
+			{
+				if (operand == 460)
+					retVal += get_reg(0, buf, operandSize);
+				else
+				{
+					BYTE reg = opc & 7;
+					reg |= ((inst->rex.value & 1) << 3);
+					retVal += get_reg(reg, buf, operandSize);
+				}
+			}
+			else if ((opc >> 4) == 0x0B)
+			{
+				BYTE regSize[2] = {0, operandSize};
+				BYTE reg = opc & 7;
+				reg |= (inst->rex.value & 1) << 3;
+				retVal += get_reg(reg, buf, regSize[(opc & 8) >> 3]);
+			}
+			else if ((opc >> 1) == 0x68)
+			{
+				buf[retVal++] = '1';
+			}
+			else if ((opc >> 1) == 0x69)
+			{
+				retVal += get_reg(1, buf, 0);
+			}
+			else if ((opc >> 2) == 0x3B)
+			{
+				buf[retVal++] = 'D';
+				buf[retVal++] = 'X';
 			}
 		}
 	}
@@ -1189,22 +1365,49 @@ DWORD disasm_operand(char *dst, QWORD size, struct instruction *inst, WORD opera
 }
 DWORD disasm(char *dst, QWORD size, struct instruction *inst)
 {
-	QWORD operand = inst->operand;
 	char buf[128];
 	DWORD retVal = 0;
-	while (operand)
+	if (inst->symbol.length)
 	{
-		if (retVal)
+		if (inst->set_prefix & LOCK)
 		{
-			buf[retVal++] = ',';
+			memcpy(buf + retVal, "LOCK ", 5);
+			retVal += 5;
+		}
+		else if (inst->set_prefix & REPNE)
+		{
+			memcpy(buf + retVal, "REPNZ ", 6);
+			retVal += 6;
+		}
+		else if (inst->set_prefix & REPE)
+		{
+			memcpy(buf + retVal, "REPZ ", 5);
+			retVal += 5;
+		}
+		memcpy(buf + retVal, inst->symbol.name, inst->symbol.length);
+		retVal += inst->symbol.length;
+
+		QWORD operand = inst->operand;
+		if (operand)
+		{
 			buf[retVal++] = ' ';
+			BYTE cnt = 0;
+			while (operand)
+			{
+				if (cnt)
+				{
+					buf[retVal++] = ',';
+					buf[retVal++] = ' ';
+				}
+				QWORD op = operand & 511;
+				if (op)
+				{
+					retVal += disasm_operand((buf + retVal), 128 - retVal, inst, op - 1);
+				}
+				operand >>= 9;
+				cnt++;
+			}
 		}
-		QWORD op = operand & 511;
-		if (op)
-		{
-			retVal += disasm_operand((buf + retVal), 128 - retVal, inst, op - 1);
-		}
-		operand >>= 9;
 	}
 	return copy(dst, buf, size, retVal);
 }

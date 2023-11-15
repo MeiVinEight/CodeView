@@ -54,13 +54,7 @@ void CodeUnit_DASM(CodeUnit *this, void *window, void *context)
 	DWORD idx = 0;
 	if (inst->symbol.length)
 	{
-		memcpy(buf + idx, inst->symbol.name, inst->symbol.length);
-		idx += inst->symbol.length;
-		if (inst->symbol.length)
-		{
-			buf[idx++] = ' ';
-			idx += disasm(buf + idx, 128 - idx, inst);
-		}
+		idx += disasm(buf + idx, 128 - idx, inst);
 	}
 	SIZE textSize = {0, 0};
 	GetTextExtentPoint32A(context, buf, (int) idx, &textSize);
