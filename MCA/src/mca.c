@@ -1074,20 +1074,21 @@ void find_opcode_prefix(struct instruction *inst)
 }
 void find_opcode(struct instruction *inst)
 {
+	BYTE pfxoff[] = {0xFF, 0x52, 0x5D};
+	BYTE extoff[] = {0x4B, 0x95, 0xA0};
+	BYTE typ = inst->type;
+	BYTE opc = inst->op[inst->op_len - 1];
+	const instruction_format *format = &opcode_map[typ][opc];
 	if (inst->op_len)
 	{
-		find_opcode_extension(inst);
-		if (!inst->symbol.length)
-		{
+		if (format->name > extoff[typ])
+			find_opcode_extension(inst);
+		else if (format->name > pfxoff[typ])
 			find_opcode_prefix(inst);
-		}
-		if (!inst->symbol.length)
+		else
 		{
 			WORD off[] = {0x0, 0x4B, 0x9D, 0xFA};
 			WORD bnd[] = {0x4B, 0x52, 0x5D, 0x29};
-			BYTE typ = inst->type;
-			BYTE opc = inst->op[inst->op_len - 1];
-			const instruction_format *format = &opcode_map[typ][opc];
 			BYTE idx = format->name;
 			QWORD operand = format->operand;
 			if (typ == 0)
