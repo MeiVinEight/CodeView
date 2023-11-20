@@ -556,10 +556,6 @@ DWORD hexnum(char *buf, BYTE *src, BYTE size)
 	}
 	return width;
 }
-DWORD displacement(char *buf, struct instruction *inst, BYTE size)
-{
-	return hexnum(buf, (BYTE *) &inst->disp, size);
-}
 void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, BYTE vex_size)
 {
 	memcpy(instr->vex, (data + instr->length), vex_size);
@@ -1213,27 +1209,33 @@ DWORD disasm_operand(char *dst, QWORD size, struct instruction *inst, WORD opera
 
 					if (rm == 4)
 					{
+						int add = 0;
 						// SIB with no displacement
 						if (!((inst->sib.bits.base == 5) && (inst->modrm.bits.mod == 0)))
 						{
 							retVal += get_reg(inst->sib.bits.base | ((inst->rex.value & 1) << 3), buf + retVal, addressSize);
-							buf[retVal++] = '+';
+							add = 1;
 						}
 						BYTE scaled = 1 << inst->sib.bits.scaled;
-						retVal += get_reg(inst->sib.bits.index | ((inst->rex.value & 2) << 2), buf + retVal, addressSize);
-						buf[retVal++] = '*';
-						buf[retVal++] = (char) ('0' + scaled);
+						if (inst->sib.bits.index != 4)
+						{
+							if (add) buf[retVal++] = '+';
+							retVal += get_reg(inst->sib.bits.index | ((inst->rex.value & 2) << 2), buf + retVal, addressSize);
+							buf[retVal++] = '*';
+							buf[retVal++] = (char) ('0' + scaled);
+							add = 1;
+						}
 						BYTE disSize = mca_displacement_size(inst->modrm.bits.mod, inst->sib.bits.base);
 						if (disSize)
 						{
-							buf[retVal++] = '+';
-							retVal += displacement(buf + retVal, inst, disSize);
+							if (add) buf[retVal++] = '+';
+							retVal += hexnum(buf + retVal, (BYTE *) &inst->disp, disSize);
 						}
 					}
-					else if ((!inst->modrm.value >> 6) && (rm == 5))
+					else if (!(inst->modrm.value >> 6) && (rm == 5))
 					{
 						// Displacement only
-						retVal += displacement(buf + retVal, inst, 4);
+						retVal += hexnum(buf + retVal, (BYTE *) &inst->disp, 4);
 					}
 					else
 					{

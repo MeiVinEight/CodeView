@@ -317,8 +317,9 @@ void CodeUnit_MODRM(CodeUnit *this, void *window, void *context)
 		SIZE prefixSize = {0, 0};
 		GetTextExtentPoint32A(context, (char *) buf, 11, &prefixSize);
 		TextOutA(context, pos.cx, pos.cy, (char *) buf, 11);
+		BYTE mod = this->code->inst.modrm.bits.mod;
 		BYTE rm = this->code->inst.modrm.bits.rm;
-		if (this->code->inst.modrm.bits.mod == 0 && (rm == 4 || rm == 5))
+		if ((mod == 0 && rm == 5) || (mod < 3 && rm == 4))
 		{
 			TextOutA(context, pos.cx + prefixSize.cx, pos.cy, "MOD combine", 11);
 		}
