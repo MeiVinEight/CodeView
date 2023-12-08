@@ -346,7 +346,7 @@ BYTE op1b_labels[256] = {
 
 BYTE modrm_2b[256] = {
 	//       00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
-	/* 00 */ P1, P1, P1, P1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 00 */ P1, P1, P1, P1, 0, 0, 0, 0, 0, 0, 0, 0, 0, P1, 0, 0,
 	/* 10 */ P7, P7, P7, P2, P2, P2, P6, P2, P1, 0, 0, 0, 0, 0, 0, P1,
 	/* 20 */ P1, P1, P1, P1, 0, 0, 0, 0, P2, P2, P7, P2, P7, P7, P2, P2,
 	/* 30 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1154,6 +1154,20 @@ int get_reg(BYTE reg, char* buf, BYTE size)
 	memcpy(buf, name, len);
 	return len;
 }
+int get_xmmreg(char *buf, BYTE reg)
+{
+	int retVal = 0;
+	buf[retVal++] = 'X';
+	buf[retVal++] = 'M';
+	buf[retVal++] = 'M';
+	if (reg > 9)
+	{
+		buf[retVal++] = '1';
+		reg %= 10;
+	}
+	buf[retVal++] = (char) ('0' + reg);
+	return retVal;
+}
 DWORD disasm_operand(char *dst, QWORD size, struct instruction *inst, WORD operand)
 {
 	char buf[128];
@@ -1191,15 +1205,37 @@ DWORD disasm_operand(char *dst, QWORD size, struct instruction *inst, WORD opera
 			}
 			case 0x06: // E
 			case 0x0B: // M
+			case 0x14: // W
 			{
 				BYTE rm = inst->modrm.bits.rm;
 				if ((inst->modrm.value >> 6) == 3 && AM != 0x0B)
 				{
-					retVal += get_reg(rm, buf + retVal, operandSize);
+					if (AM == 0x14)
+						retVal += get_xmmreg(buf + retVal, rm | ((inst->rex.value & 1) << 3));
+					else
+						retVal += get_reg(rm | ((inst->rex.value & 1) << 3), buf + retVal, operandSize);
 				}
 				else
 				{
-					retVal += ptr(buf + retVal, size - retVal, operandSize);
+					if (inst->type == OP2B)
+					{
+						BYTE opc = inst->op[inst->op_len - 1];
+						if (opc == 0x00 && (inst->modrm.bits.reg >> 1)) operandSize = 1;
+						else if (opc == 0x01 && inst->modrm.bits.reg == 4) operandSize = 1;
+					}
+
+					int ptrSize = 1;
+					if (inst->type == 0)
+					{
+						if (inst->op[0] == 0x8D) ptrSize = 0;
+					}
+					else if (inst->type == 1)
+					{
+						BYTE opc = inst->op[inst->op_len - 1];
+						if (opc == 0x01 && inst->modrm.bits.reg >> 2 == 0) ptrSize = 0;
+					}
+					if (ptrSize)
+						retVal += ptr(buf + retVal, size - retVal, operandSize);
 					buf[retVal++] = '[';
 					if (inst->set_field & SEGSLT && inst->segment_selector < 6)
 					{
@@ -1274,6 +1310,13 @@ DWORD disasm_operand(char *dst, QWORD size, struct instruction *inst, WORD opera
 					buf[retVal++] = segment_register[reg];
 					buf[retVal++] = 'S';
 				}
+				break;
+			}
+			case 0x13: // V
+			{
+				BYTE reg = inst->modrm.bits.reg;
+				reg |= (inst->rex.value & 4) << 1;
+				retVal += get_xmmreg(buf + retVal, reg);
 				break;
 			}
 			case 0x15: // X
