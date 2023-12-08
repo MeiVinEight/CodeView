@@ -1294,7 +1294,7 @@ DWORD disasm_operand(char *dst, QWORD size, struct instruction *inst, WORD opera
 			BYTE opc = inst->op[0];
 			if
 			(
-				(((opc >> 6) == 0) && ((opc & 14) == 4)) ||
+				(((opc >> 6) == 0) && ((opc & 6) == 4)) ||
 				((opc >> 2) == 0x28) ||
 				((opc >> 3) == 0x15) ||
 				((opc >> 2) == 0x39) ||
