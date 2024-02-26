@@ -1302,6 +1302,11 @@ DWORD disasm_operand(char *dst, QWORD size, struct instruction *inst, WORD opera
 				buf[retVal++] = ']';
 				break;
 			}
+			case 0x10: // R
+			{
+				retVal += get_reg(inst->modrm.bits.rm, buf, 2);
+				break;
+			}
 			case 0x11: // S
 			{
 				BYTE reg = inst->modrm.bits.reg;
