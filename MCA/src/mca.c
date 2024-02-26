@@ -1203,6 +1203,13 @@ DWORD disasm_operand(char *dst, QWORD size, struct instruction *inst, WORD opera
 				retVal += hexnum(buf + retVal, (BYTE *) &inst->imm, 1 << len);
 				break;
 			}
+			case 0x04: // C
+			{
+				buf[retVal++] = 'C';
+				buf[retVal++] = 'R';
+				buf[retVal++] = (char) ('0' + inst->modrm.bits.reg);
+				break;
+			}
 			case 0x06: // E
 			case 0x0B: // M
 			case 0x14: // W
