@@ -533,8 +533,8 @@ DWORD copy(char *buf, const char *src, DWORD ava, DWORD len)
 DWORD ptr(char *dst, QWORD bufSize, BYTE size)
 {
 	char buf[16];
-	const char *sizePrefix = "DWORD PTR";
-	DWORD len = 9;
+	const char *sizePrefix = "DWORD PTR ";
+	DWORD len = 10;
 	if (size < 2)
 	{
 		len--;
@@ -1236,13 +1236,13 @@ DWORD disasm_operand(char *dst, QWORD size, struct instruction *inst, WORD opera
 					}
 					if (ptrSize)
 						retVal += ptr(buf + retVal, size - retVal, operandSize);
-					buf[retVal++] = '[';
 					if (inst->set_field & SEGSLT && inst->segment_selector < 6)
 					{
 						buf[retVal++] = segment_register[inst->segment_selector];
 						buf[retVal++] = 'S';
 						buf[retVal++] = ':';
 					}
+					buf[retVal++] = '[';
 
 					if (rm == 4)
 					{
